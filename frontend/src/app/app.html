@@ -1,0 +1,100 @@
+<div class="min-vh-100" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #cbd5e1 100%); padding: 20px;">
+  <div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row justify-content-center mb-4">
+      <div class="col-12">
+        <div class="text-center mb-4">
+          <h1 class="display-4 fw-bold mb-3" style="color: #1e293b;">
+            <i class="fas fa-shopping-bag me-3" style="color: #0f766e;"></i>Ürün Arama
+          </h1>
+          <p class="lead" style="color: #475569;">Ürünleri ara, keşfet ve analiz et 🚀</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="row justify-content-center mb-4">
+      <div class="col-12 col-lg-10">
+        <div class="bg-white rounded-4 p-4 shadow-lg">
+          <app-search-bar 
+            (search)="onSearch($event)">
+          </app-search-bar>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content with Sidebar -->
+    <div class="row justify-content-center">
+      <div class="col-12 col-xl-11">
+        <div class="row g-3">
+          <!-- Category Sidebar -->
+          <div class="col-12 col-lg-3 col-xl-2">
+            <app-category-sidebar 
+              (categoryFilter)="onCategoryFilter($event)">
+            </app-category-sidebar>
+          </div>
+
+          <!-- Results Section -->
+          <div class="col-12 col-lg-9 col-xl-10">
+        <div *ngIf="products.length === 0 && !isLoading" 
+             class="text-center py-5">
+          <div class="bg-white rounded-4 p-5 shadow-sm border">
+            <i class="fas fa-search fa-3x mb-3" style="color: #64748b;"></i>
+            <h4 class="mb-2" style="color: #1e293b;">Ürün bulunamadı</h4>
+            <p style="color: #64748b;">Farklı arama terimleri deneyin</p>
+          </div>
+        </div>
+        
+        <div *ngIf="products.length > 0">
+          <!-- Results Header -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h4 class="mb-0" style="color: #1e293b;">
+                <i class="fas fa-box-open me-2" style="color: #0f766e;"></i>
+                Bulunan Ürünler
+              </h4>
+              <small style="color: #64748b;">{{ products.length }} ürün listeleniyor</small>
+            </div>
+            <div class="btn-group" role="group">
+              <button type="button" 
+                      (click)="setViewMode('grid')"
+                      class="btn btn-sm"
+                      [class]="viewMode === 'grid' ? 'btn btn-sm' : 'btn btn-sm btn-outline-secondary'"
+                      [style.background]="viewMode === 'grid' ? 'linear-gradient(45deg, #0f766e, #059669)' : ''"
+                      [style.border]="viewMode === 'grid' ? 'none' : ''"
+                      [style.color]="viewMode === 'grid' ? 'white' : ''">
+                <i class="fas fa-th"></i> Kart Görünümü
+              </button>
+              <button type="button" 
+                      (click)="setViewMode('list')"
+                      class="btn btn-sm"
+                      [class]="viewMode === 'list' ? 'btn btn-sm' : 'btn btn-sm btn-outline-secondary'"
+                      [style.background]="viewMode === 'list' ? 'linear-gradient(45deg, #0f766e, #059669)' : ''"
+                      [style.border]="viewMode === 'list' ? 'none' : ''"
+                      [style.color]="viewMode === 'list' ? 'white' : ''">
+                <i class="fas fa-list"></i> Liste Görünümü
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid View -->
+          <div *ngIf="viewMode === 'grid'" class="row g-4">
+            <div *ngFor="let product of products; let i = index" 
+                 class="col-12 col-sm-6 col-lg-4 col-xl-3"
+                 [style.animation-delay.ms]="i * 50"
+                 style="animation: fadeInUp 0.6s ease forwards; opacity: 0;">
+              <app-product-card [product]="product"></app-product-card>
+            </div>
+          </div>
+
+          <!-- List View -->
+          <div *ngIf="viewMode === 'list'">
+            <app-product-list [products]="products"></app-product-list>
+          </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

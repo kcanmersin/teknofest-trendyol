@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .endpoint { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; max-height: 300px; overflow-y: auto; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <p>Backend URL: <strong>https://9206fa96cb06.ngrok-free.app</strong></p>
+
+    <div class="endpoint">
+        <h3>1. Test Root Endpoint</h3>
+        <button onclick="testRoot()">Test GET /</button>
+        <div id="root-result" class="result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>2. Test Search</h3>
+        <input type="text" id="search-query" placeholder="Arama kelimesi" value="elbise">
+        <button onclick="testSearch()">Test POST /search</button>
+        <div id="search-result" class="result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>3. Test Categories</h3>
+        <button onclick="testCategories()">Test GET /categories</button>
+        <div id="categories-result" class="result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>4. Test Popular Categories</h3>
+        <input type="number" id="limit-input" placeholder="Limit" value="5">
+        <button onclick="testPopularCategories()">Test GET /popular-categories</button>
+        <div id="popular-result" class="result"></div>
+    </div>
+
+    <div class="endpoint">
+        <h3>5. Test Advanced Search</h3>
+        <input type="text" id="adv-query" placeholder="Query" value=""><br>
+        <input type="text" id="adv-category1" placeholder="Level1 Category" value=""><br>
+        <input type="text" id="adv-category2" placeholder="Level2 Category" value="Kadın Giyim"><br>
+        <input type="number" id="adv-min-price" placeholder="Min Price" value=""><br>
+        <input type="number" id="adv-max-price" placeholder="Max Price" value="500"><br>
+        <input type="number" id="adv-min-rating" placeholder="Min Rating" value="4"><br>
+        <button onclick="testAdvancedSearch()">Test POST /search/advanced</button>
+        <div id="advanced-result" class="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://9206fa96cb06.ngrok-free.app';
+        const headers = {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'application/json'
+        };
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: headers,
+                    ...options
+                });
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testRoot() {
+            const result = await makeRequest(`${BASE_URL}/`);
+            document.getElementById('root-result').innerHTML = `
+                <strong>Status:</strong> ${result.success ? 'Success' : 'Error'}<br>
+                <strong>Response:</strong><br>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        async function testSearch() {
+            const query = document.getElementById('search-query').value;
+            const result = await makeRequest(`${BASE_URL}/search`, {
+                method: 'POST',
+                body: JSON.stringify({ query, limit: 10 })
+            });
+            document.getElementById('search-result').innerHTML = `
+                <strong>Status:</strong> ${result.success ? 'Success' : 'Error'}<br>
+                <strong>Query:</strong> ${query}<br>
+                <strong>Results:</strong> ${result.data?.total_results || 0}<br>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        async function testCategories() {
+            const result = await makeRequest(`${BASE_URL}/categories`);
+            document.getElementById('categories-result').innerHTML = `
+                <strong>Status:</strong> ${result.success ? 'Success' : 'Error'}<br>
+                <strong>Response:</strong><br>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        async function testPopularCategories() {
+            const limit = document.getElementById('limit-input').value || 10;
+            const result = await makeRequest(`${BASE_URL}/popular-categories?limit=${limit}`);
+            document.getElementById('popular-result').innerHTML = `
+                <strong>Status:</strong> ${result.success ? 'Success' : 'Error'}<br>
+                <strong>Limit:</strong> ${limit}<br>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        async function testAdvancedSearch() {
+            const params = {
+                query: document.getElementById('adv-query').value || undefined,
+                category_level1: document.getElementById('adv-category1').value || undefined,
+                category_level2: document.getElementById('adv-category2').value || undefined,
+                min_price: parseFloat(document.getElementById('adv-min-price').value) || undefined,
+                max_price: parseFloat(document.getElementById('adv-max-price').value) || undefined,
+                min_rating: parseFloat(document.getElementById('adv-min-rating').value) || undefined,
+                limit: 10
+            };
+
+            // Remove undefined values
+            Object.keys(params).forEach(key => {
+                if (params[key] === undefined) delete params[key];
+            });
+
+            const result = await makeRequest(`${BASE_URL}/search/advanced`, {
+                method: 'POST',
+                body: JSON.stringify(params)
+            });
+            
+            document.getElementById('advanced-result').innerHTML = `
+                <strong>Status:</strong> ${result.success ? 'Success' : 'Error'}<br>
+                <strong>Filters:</strong> ${JSON.stringify(params)}<br>
+                <strong>Results:</strong> ${result.data?.total_results || 0}<br>
+                <pre>${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+        }
+
+        // Auto test on load
+        window.onload = function() {
+            testRoot();
+        };
+    </script>
+</body>
+</html>
