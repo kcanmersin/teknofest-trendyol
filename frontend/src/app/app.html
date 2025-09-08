@@ -12,6 +12,40 @@
       </div>
     </div>
 
+    <!-- Search Mode Toggle -->
+    <div class="row justify-content-center mb-3">
+      <div class="col-12 col-lg-10">
+        <div class="bg-white rounded-4 p-3 shadow-sm">
+          <div class="d-flex justify-content-center align-items-center">
+            <span class="me-3 fw-semibold" style="color: #475569;">Arama Tipi:</span>
+            <div class="btn-group" role="group">
+              <button type="button" 
+                      (click)="setSearchMode('ml')"
+                      class="btn btn-sm px-4"
+                      [class]="searchMode === 'ml' ? 'btn btn-sm px-4' : 'btn btn-sm btn-outline-primary px-4'"
+                      [style.background]="searchMode === 'ml' ? 'linear-gradient(45deg, #3b82f6, #1d4ed8)' : ''"
+                      [style.border]="searchMode === 'ml' ? 'none' : ''"
+                      [style.color]="searchMode === 'ml' ? 'white' : ''">
+                <i class="fas fa-brain me-2"></i>ML Arama
+              </button>
+              <button type="button" 
+                      (click)="setSearchMode('db')"
+                      class="btn btn-sm px-4"
+                      [class]="searchMode === 'db' ? 'btn btn-sm px-4' : 'btn btn-sm btn-outline-primary px-4'"
+                      [style.background]="searchMode === 'db' ? 'linear-gradient(45deg, #3b82f6, #1d4ed8)' : ''"
+                      [style.border]="searchMode === 'db' ? 'none' : ''"
+                      [style.color]="searchMode === 'db' ? 'white' : ''">
+                <i class="fas fa-database me-2"></i>DB Arama
+              </button>
+            </div>
+            <small class="ms-3" style="color: #64748b;">
+              {{ searchMode === 'ml' ? 'Makine Öğrenmesi ile akıllı arama' : 'Veritabanı tabanlı hızlı arama' }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Search Section -->
     <div class="row justify-content-center mb-4">
       <div class="col-12 col-lg-10">

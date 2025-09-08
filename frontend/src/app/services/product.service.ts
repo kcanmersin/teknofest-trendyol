@@ -7,7 +7,7 @@ import { Product, SearchResponse, ApiResponse } from '../models/product.model';
   providedIn: 'root'
 })
 export class ProductService {
-  private readonly API_BASE = 'https://9206fa96cb06.ngrok-free.app';
+  private readonly API_BASE = 'https://13eb9883d7c1.ngrok-free.app';
   private readonly headers = new HttpHeaders({
     'ngrok-skip-browser-warning': 'true',
     'Content-Type': 'application/json'
@@ -21,9 +21,9 @@ export class ProductService {
     });
   }
 
-  searchProducts(query: string, limit: number = 50): Observable<SearchResponse> {
+  searchProducts(query: string, limit: number = 50, mode: string = 'db'): Observable<SearchResponse> {
     return this.http.post<SearchResponse>(`${this.API_BASE}/search`, 
-      { query, limit }, 
+      { query, limit, mode }, 
       { headers: this.headers }
     );
   }
@@ -55,7 +55,8 @@ export class ProductService {
     max_price?: number,
     min_rating?: number,
     min_review_count?: number,
-    limit?: number
+    limit?: number,
+    mode?: string
   }): Observable<SearchResponse> {
     return this.http.post<SearchResponse>(`${this.API_BASE}/search/advanced`, params, { 
       headers: this.headers 
