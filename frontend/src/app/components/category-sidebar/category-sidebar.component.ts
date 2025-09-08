@@ -7,7 +7,9 @@ interface CategoryGroup {
   icon: string;
   color: string;
   subcategories: SubCategory[];
+  allSubcategories: SubCategory[];
   isExpanded?: boolean;
+  showingMore?: boolean;
 }
 
 interface SubCategory {
@@ -81,9 +83,12 @@ interface SubCategory {
             </div>
             
             <!-- Show More Button -->
-            <div *ngIf="group.subcategories.length > 8" class="text-center mt-2">
-              <button class="btn btn-sm btn-link" style="color: #0f766e; font-size: 12px;">
-                <i class="fas fa-plus me-1"></i>Daha fazla göster
+            <div *ngIf="canShowMore(group)" class="text-center mt-2">
+              <button (click)="toggleShowMore(group)" 
+                      class="btn btn-sm btn-link" 
+                      style="color: #0f766e; font-size: 12px;">
+                <i [class]="group.showingMore ? 'fas fa-minus me-1' : 'fas fa-plus me-1'"></i>
+                {{ group.showingMore ? 'Daha az göster' : 'Daha fazla göster' }}
               </button>
             </div>
           </div>
@@ -205,71 +210,93 @@ export class CategorySidebarComponent implements OnInit {
 
   processCategoryData(data: any) {
     // Manuel gruplama yap
-    this.categoryGroups = [
+    const groups = [
       {
         name: 'Giyim & Moda',
         icon: 'fas fa-tshirt',
         color: '#0f766e',
         isExpanded: true,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, ['Giyim']).slice(0, 15)
+        showingMore: false,
+        level1Names: ['Giyim'],
+        initialCount: 8
       },
       {
         name: 'Ayakkabı',
         icon: 'fas fa-shoe-prints', 
         color: '#7c3aed',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, ['Ayakkabı']).slice(0, 12)
+        showingMore: false,
+        level1Names: ['Ayakkabı'],
+        initialCount: 6
       },
       {
         name: 'Aksesuar & Takı',
         icon: 'fas fa-gem',
         color: '#dc2626',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, ['Aksesuar']).slice(0, 12)
+        showingMore: false,
+        level1Names: ['Aksesuar'],
+        initialCount: 6
       },
       {
         name: 'Ev & Yaşam',
         icon: 'fas fa-home',
         color: '#059669',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, [
-          'Ev & Mobilya', 'Banyo Yapı & Hırdavat', 'Bahçe & Elektrikli El Aletleri'
-        ]).slice(0, 10)
+        showingMore: false,
+        level1Names: ['Ev & Mobilya', 'Banyo Yapı & Hırdavat', 'Bahçe & Elektrikli El Aletleri'],
+        initialCount: 6
       },
       {
         name: 'Kozmetik & Bakım',
         icon: 'fas fa-spa',
         color: '#ec4899',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, ['Kozmetik & Kişisel Bakım']).slice(0, 8)
+        showingMore: false,
+        level1Names: ['Kozmetik & Kişisel Bakım'],
+        initialCount: 5
       },
       {
         name: 'Spor & Eğlence',
         icon: 'fas fa-dumbbell',
         color: '#f59e0b',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, [
-          'Spor & Outdoor', 'Hobi & Eğlence'
-        ]).slice(0, 8)
+        showingMore: false,
+        level1Names: ['Spor & Outdoor', 'Hobi & Eğlence'],
+        initialCount: 5
       },
       {
         name: 'Anne & Bebek',
         icon: 'fas fa-baby',
         color: '#06b6d4',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, ['Anne & Bebek & Çocuk']).slice(0, 6)
+        showingMore: false,
+        level1Names: ['Anne & Bebek & Çocuk'],
+        initialCount: 4
       },
       {
         name: 'Teknoloji & Diğer',
         icon: 'fas fa-laptop',
         color: '#6366f1',
         isExpanded: false,
-        subcategories: this.getSubcategoriesForLevel1(data.level2_categories, [
-          'Elektronik', 'Otomobil & Motosiklet', 'Kırtasiye & Ofis Malzemeleri', 
-          'Kitap', 'Süpermarket', 'Ek Hizmetler'
-        ]).slice(0, 10)
+        showingMore: false,
+        level1Names: ['Elektronik', 'Otomobil & Motosiklet', 'Kırtasiye & Ofis Malzemeleri', 'Kitap', 'Süpermarket', 'Ek Hizmetler'],
+        initialCount: 6
       }
     ];
+
+    this.categoryGroups = groups.map(group => {
+      const allSubs = this.getSubcategoriesForLevel1(data.level2_categories, group.level1Names);
+      return {
+        name: group.name,
+        icon: group.icon,
+        color: group.color,
+        isExpanded: group.isExpanded,
+        showingMore: group.showingMore,
+        allSubcategories: allSubs,
+        subcategories: allSubs.slice(0, group.initialCount)
+      };
+    });
   }
 
   getSubcategoriesForLevel1(level2Categories: any[], level1Names: string[]): SubCategory[] {
@@ -345,5 +372,24 @@ export class CategorySidebarComponent implements OnInit {
   emitFilterChange() {
     const selectedCategories = this.getActiveFilters().map(f => f.name);
     this.categoryFilter.emit(selectedCategories);
+  }
+
+  canShowMore(group: CategoryGroup): boolean {
+    return group.allSubcategories.length > group.subcategories.length;
+  }
+
+  toggleShowMore(group: CategoryGroup) {
+    if (group.showingMore) {
+      // Daha az göster - sadece ilk birkaçını göster
+      const initialCount = group.subcategories.length === group.allSubcategories.length 
+        ? Math.min(6, group.allSubcategories.length) 
+        : group.subcategories.length;
+      group.subcategories = group.allSubcategories.slice(0, initialCount);
+      group.showingMore = false;
+    } else {
+      // Daha fazla göster - hepsini göster
+      group.subcategories = [...group.allSubcategories];
+      group.showingMore = true;
+    }
   }
 }

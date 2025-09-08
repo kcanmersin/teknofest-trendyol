@@ -7,8 +7,8 @@ import { Product } from '../../models/product.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="card h-100 border-0 shadow-lg position-relative overflow-hidden" 
-         style="transition: all 0.3s ease; border-radius: 20px;">
+    <div class="card border-0 shadow-lg position-relative overflow-hidden" 
+         style="transition: all 0.3s ease; border-radius: 20px; height: 580px; display: flex; flex-direction: column;">
       
       <!-- Discount Badge -->
       <div *ngIf="product.discount_percentage" 
@@ -42,7 +42,7 @@ import { Product } from '../../models/product.model';
              (mouseleave)="onImageHover($event, false)">
       </div>
       
-      <div class="card-body p-4">
+      <div class="card-body p-4 d-flex flex-column" style="flex: 1;">
         <!-- Category Badge -->
         <div class="mb-3">
           <div class="d-flex flex-wrap gap-1">
@@ -62,7 +62,7 @@ import { Product } from '../../models/product.model';
           <div class="bg-success rounded-end-pill position-absolute top-0 start-0" 
                style="width: 4px; height: 100%; z-index: 1;"></div>
           <h5 class="card-title fw-bold ps-3" 
-              style="line-height: 1.4; height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 8px 12px; border-radius: 12px; margin: 0;"
+              style="line-height: 1.4; height: 3.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 8px 12px; border-radius: 12px; margin: 0; font-size: 0.95rem;"
               [title]="product.content_title">
             {{ product.content_title }}
           </h5>
@@ -113,7 +113,7 @@ import { Product } from '../../models/product.model';
         </div>
 
         <!-- Action Buttons -->
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 mt-auto">
           <button class="btn btn-outline-primary btn-sm rounded-pill flex-fill">
             <i class="fas fa-eye me-1"></i>Detay
           </button>

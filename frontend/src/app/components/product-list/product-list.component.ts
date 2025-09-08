@@ -85,10 +85,10 @@ import { Product } from '../../models/product.model';
             <div class="text-sm-end mt-3 mt-sm-0">
               <!-- Price -->
               <div class="mb-3">
-                <div class="text-success fw-bold fs-5">₺{{ product.discounted_price }}</div>
+                <div class="text-success fw-bold fs-5">₺{{ product.discounted_price | number:'1.2-2' }}</div>
                 <div *ngIf="product.original_price !== product.discounted_price" 
                      class="text-muted text-decoration-line-through small">
-                  ₺{{ product.original_price }}
+                  ₺{{ product.original_price | number:'1.2-2' }}
                 </div>
               </div>
 
