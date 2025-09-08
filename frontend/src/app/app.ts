@@ -7,6 +7,7 @@ import { SearchBarComponent } from './components/search-bar/search-bar.component
 import { ProductCardComponent } from './components/product-card/product-card.component';
 import { ProductListComponent } from './components/product-list/product-list.component';
 import { CategorySidebarComponent } from './components/category-sidebar/category-sidebar.component';
+import { ProductModalComponent } from './components/product-modal/product-modal.component';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,8 @@ import { CategorySidebarComponent } from './components/category-sidebar/category
     SearchBarComponent,
     ProductCardComponent,
     ProductListComponent,
-    CategorySidebarComponent
+    CategorySidebarComponent,
+    ProductModalComponent
   ],
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -29,6 +31,10 @@ export class App implements OnInit {
   currentQuery = '';
   viewMode: 'grid' | 'list' = 'grid';
   searchMode: 'ml' | 'db' = 'ml';
+  
+  // Modal properties
+  selectedProduct: Product | null = null;
+  isModalVisible = false;
 
   constructor(private productService: ProductService) {}
 
@@ -118,6 +124,17 @@ export class App implements OnInit {
 
   onRefresh() {
     // Placeholder for refresh function
+  }
+
+  // Modal methods
+  openProductModal(product: Product) {
+    this.selectedProduct = product;
+    this.isModalVisible = true;
+  }
+
+  closeProductModal() {
+    this.isModalVisible = false;
+    this.selectedProduct = null;
   }
 
 }

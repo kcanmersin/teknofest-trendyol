@@ -1,0 +1,147 @@
+<!-- Modal Overlay -->
+<div class="modal-overlay" 
+     *ngIf="isVisible" 
+     (click)="onBackdropClick($event)"
+     [style.animation]="isVisible ? 'fadeIn 0.3s ease' : 'fadeOut 0.3s ease'">
+  
+  <!-- Modal Container -->
+  <div class="modal-container" 
+       [style.animation]="isVisible ? 'slideInUp 0.4s ease' : 'slideOutDown 0.3s ease'">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="modal-title-wrapper">
+        <div class="green-stripe"></div>
+        <h4 class="modal-title">Ürün Detayları</h4>
+      </div>
+      <button type="button" class="btn-close" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body" *ngIf="product">
+      <div class="row g-4">
+        
+        <!-- Product Image -->
+        <div class="col-md-5">
+          <div class="image-container">
+            <img [src]="product.image_url" 
+                 [alt]="product.content_title"
+                 class="product-image"
+                 onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+            
+            <!-- Discount Badge -->
+            <div class="discount-badge" *ngIf="getDiscountPercentage() > 0">
+              <span>-%{{getDiscountPercentage()}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-md-7">
+          <div class="product-info">
+            
+            <!-- Title -->
+            <h3 class="product-title">{{product.content_title}}</h3>
+            
+            <!-- Category Path -->
+            <div class="category-path mb-3">
+              <span class="category-item" *ngIf="product.level1_category_name">
+                <i class="fas fa-folder text-muted me-1"></i>{{product.level1_category_name}}
+              </span>
+              <i class="fas fa-chevron-right text-muted mx-2" *ngIf="product.level1_category_name && product.level2_category_name"></i>
+              <span class="category-item" *ngIf="product.level2_category_name">
+                {{product.level2_category_name}}
+              </span>
+              <i class="fas fa-chevron-right text-muted mx-2" *ngIf="product.level2_category_name && product.leaf_category_name"></i>
+              <span class="category-item" *ngIf="product.leaf_category_name">
+                {{product.leaf_category_name}}
+              </span>
+            </div>
+
+            <!-- Rating -->
+            <div class="rating-section mb-3" *ngIf="product.content_rate_avg">
+              <div class="stars">
+                <i *ngFor="let star of getRatingStars(product.content_rate_avg)" 
+                   [class]="star" 
+                   style="color: #fbbf24;"></i>
+              </div>
+              <span class="rating-text ms-2">
+                {{product.content_rate_avg | number:'1.1-1'}} 
+                <span class="text-muted">({{product.content_review_count}} değerlendirme)</span>
+              </span>
+            </div>
+
+            <!-- Price Section -->
+            <div class="price-section mb-4">
+              <div class="current-price">
+                <span class="price-amount">{{product.selling_price | number:'1.2-2'}} ₺</span>
+              </div>
+              <div class="original-price" *ngIf="product.original_price && product.original_price > product.selling_price">
+                <span class="text-decoration-line-through text-muted">
+                  {{product.original_price | number:'1.2-2'}} ₺
+                </span>
+              </div>
+            </div>
+
+            <!-- Product Stats -->
+            <div class="product-stats">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-store text-primary"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Satıcı Sayısı</div>
+                    <div class="stat-value">{{product.merchant_count || 0}}</div>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-star text-warning"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">Oy Sayısı</div>
+                    <div class="stat-value">{{product.content_rate_count || 0}}</div>
+                  </div>
+                </div>
+
+                <!-- ML Specific Stats -->
+                <div class="stat-item" *ngIf="product.tfidf_sim">
+                  <div class="stat-icon">
+                    <i class="fas fa-brain text-info"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">TF-IDF Benzerlik</div>
+                    <div class="stat-value">{{(product.tfidf_sim * 100) | number:'1.1-1'}}%</div>
+                  </div>
+                </div>
+
+                <div class="stat-item" *ngIf="product.score">
+                  <div class="stat-icon">
+                    <i class="fas fa-chart-line text-success"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">ML Skoru</div>
+                    <div class="stat-value">{{(product.score * 100) | number:'1.1-1'}}%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">
+        <i class="fas fa-times me-2"></i>Kapat
+      </button>
+    </div>
+
+  </div>
+</div>

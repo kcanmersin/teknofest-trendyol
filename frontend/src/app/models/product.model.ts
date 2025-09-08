@@ -13,6 +13,9 @@ export interface Product {
   content_rate_avg?: number;
   discount_percentage?: number;
   image_url: string;
+  // ML-specific fields
+  tfidf_sim?: number;
+  score?: number;
 }
 
 export interface SearchResponse {

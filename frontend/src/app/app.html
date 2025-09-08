@@ -117,7 +117,9 @@
                  class="col-12 col-sm-6 col-lg-4 col-xl-3"
                  [style.animation-delay.ms]="i * 50"
                  style="animation: fadeInUp 0.6s ease forwards; opacity: 0;">
-              <app-product-card [product]="product"></app-product-card>
+              <div (click)="openProductModal(product)" style="cursor: pointer;">
+                <app-product-card [product]="product"></app-product-card>
+              </div>
             </div>
           </div>
 
@@ -131,4 +133,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Product Modal -->
+  <app-product-modal 
+    [product]="selectedProduct"
+    [isVisible]="isModalVisible"
+    (close)="closeProductModal()">
+  </app-product-modal>
 </div>
