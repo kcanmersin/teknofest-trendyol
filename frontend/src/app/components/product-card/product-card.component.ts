@@ -7,8 +7,8 @@ import { Product } from '../../models/product.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="card border-0 shadow-lg position-relative overflow-hidden" 
-         style="transition: all 0.3s ease; border-radius: 20px; height: 580px; display: flex; flex-direction: column;">
+    <div class="card border-0 shadow-lg position-relative overflow-hidden product-card" 
+         style="transition: all 0.3s ease; border-radius: 20px; display: flex; flex-direction: column;">
       
       <!-- Discount Badge -->
       <div *ngIf="product.discount_percentage" 
@@ -32,14 +32,16 @@ import { Product } from '../../models/product.model';
       </div>
       
       <!-- Product Image -->
-      <div class="position-relative overflow-hidden" style="height: 220px;">
-        <img [src]="product.image_url" 
-             [alt]="product.content_title"
-             class="card-img-top w-100 h-100"
-             style="object-fit: cover; transition: transform 0.3s ease;"
-             (error)="onImageError($event)"
-             (mouseenter)="onImageHover($event, true)"
-             (mouseleave)="onImageHover($event, false)">
+      <div class="product-image-container position-relative overflow-hidden">
+        <div class="image-wrapper">
+          <img [src]="product.image_url" 
+               [alt]="product.content_title"
+               class="product-image w-100 h-100"
+               (error)="onImageError($event)"
+               (mouseenter)="onImageHover($event, true)"
+               (mouseleave)="onImageHover($event, false)"
+               loading="lazy">
+        </div>
       </div>
       
       <div class="card-body p-4 d-flex flex-column" style="flex: 1;">
@@ -47,11 +49,11 @@ import { Product } from '../../models/product.model';
         <div class="mb-3">
           <div class="d-flex flex-wrap gap-1">
             <span class="badge text-white rounded-pill px-2 py-1 shadow-sm" 
-                  style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 10px;">
+                  style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 12px;">
               {{ product.level1_category_name }}
             </span>
             <span class="badge bg-secondary text-white rounded-pill px-2 py-1" 
-                  style="font-size: 9px;">
+                  style="font-size: 11px;">
               {{ product.level2_category_name }}
             </span>
           </div>
@@ -62,7 +64,7 @@ import { Product } from '../../models/product.model';
           <div class="bg-success rounded-end-pill position-absolute top-0 start-0" 
                style="width: 4px; height: 100%; z-index: 1;"></div>
           <h5 class="card-title fw-bold ps-3" 
-              style="line-height: 1.4; height: 3.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 8px 12px; border-radius: 12px; margin: 0; font-size: 0.95rem;"
+              style="line-height: 1.4; height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 8px 12px; border-radius: 12px; margin: 0; font-size: 1.1rem;"
               [title]="product.content_title">
             {{ product.content_title }}
           </h5>
@@ -72,7 +74,7 @@ import { Product } from '../../models/product.model';
         <div class="mb-3">
           <div class="d-flex align-items-center justify-content-between">
             <div>
-              <div class="text-success fw-bold fs-5">₺{{ formatPrice(product.discounted_price) }}</div>
+              <div class="text-success fw-bold" style="font-size: 1.3rem;">₺{{ formatPrice(product.discounted_price) }}</div>
               <div *ngIf="product.original_price !== product.discounted_price" 
                    class="position-relative d-inline-block">
                 <span class="original-price text-muted small">
@@ -85,14 +87,14 @@ import { Product } from '../../models/product.model';
                 <i class="fas fa-star" *ngFor="let star of getStars(product.content_rate_avg || 0)"></i>
                 <i class="far fa-star" *ngFor="let star of getEmptyStars(product.content_rate_avg || 0)"></i>
               </div>
-              <small class="text-muted">({{ product.content_review_count }} yorum)</small>
+              <span class="text-muted" style="font-size: 14px;">({{ product.content_review_count }} yorum)</span>
             </div>
           </div>
         </div>
         
         <!-- Product Details -->
-        <div class="bg-light bg-opacity-50 p-3 rounded-3 mb-3" style="border-left: 4px solid #0f766e;">
-          <div class="row g-2 small">
+        <div class="bg-light bg-opacity-50 p-2 rounded-3 mb-2" style="border-left: 4px solid #0f766e;">
+          <div class="row g-1" style="font-size: 13px;">
             <div class="col-12">
               <span class="text-muted">Kategori:</span> 
               {{ product.level2_category_name }}
@@ -226,6 +228,102 @@ import { Product } from '../../models/product.model';
         right: 2px;
       }
     }
+    
+    /* Product Image Styles - Smaller default height */
+    .product-image-container {
+      height: 200px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+    }
+    
+    .image-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    
+    .product-image {
+      object-fit: contain;
+      object-position: center;
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      background: white;
+    }
+    
+    .product-image:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+    
+    /* Responsive card and image adjustments - Smaller cards */
+    .product-card {
+      height: 100%;
+      min-height: 420px;
+    }
+    
+    @media (min-width: 1400px) {
+      .product-card {
+        min-height: 450px;
+      }
+      
+      .product-image-container {
+        height: 200px;
+      }
+    }
+    
+    @media (max-width: 1199px) {
+      .product-card {
+        min-height: 400px;
+      }
+      
+      .product-image-container {
+        height: 180px;
+      }
+    }
+    
+    @media (max-width: 991px) {
+      .product-card {
+        min-height: 380px;
+      }
+      
+      .product-image-container {
+        height: 160px;
+      }
+    }
+    
+    @media (max-width: 767px) {
+      .product-card {
+        min-height: 360px;
+      }
+      
+      .product-image-container {
+        height: 140px;
+      }
+      
+      .image-wrapper {
+        padding: 6px;
+      }
+    }
+    
+    @media (max-width: 575px) {
+      .product-card {
+        min-height: 340px;
+      }
+      
+      .product-image-container {
+        height: 120px;
+      }
+      
+      .card-body {
+        padding: 12px !important;
+      }
+    }
   `]
 })
 export class ProductCardComponent {
@@ -233,15 +331,15 @@ export class ProductCardComponent {
   Math = Math;
 
   onImageError(event: any) {
-    event.target.src = 'https://via.placeholder.com/280x200/f8f9fa/6c757d?text=Görsel+Yok';
+    const placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDI4MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyODAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjhGOUZBIi8+CjxwYXRoIGQ9Ik0xNDAgODBMMTIwIDEwMEwxNjAgMTAwWiIgZmlsbD0iIzY5NzU4QiIvPgo8Y2lyY2xlIGN4PSIxMDAiIGN5PSI2MCIgcj0iMTAiIGZpbGw9IiM2OTc1OEIiLz4KPHRleHQgeD0iMTQwIiB5PSIxMzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY5NzU4QiI+R8O2cnNlbCBZb2s8L3RleHQ+Cjwvc3ZnPgo=';
+    event.target.src = placeholder;
+    event.target.style.objectFit = 'contain';
+    event.target.style.background = '#f8f9fa';
+    event.target.style.border = '1px dashed #cbd5e1';
   }
 
   onImageHover(event: any, isHover: boolean) {
-    if (isHover) {
-      event.target.style.transform = 'scale(1.05)';
-    } else {
-      event.target.style.transform = 'scale(1)';
-    }
+    // CSS hover efekti kullanıyoruz, JavaScript hover'ı kaldırdık
   }
 
   getStars(rating: number): number[] {

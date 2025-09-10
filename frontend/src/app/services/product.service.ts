@@ -7,7 +7,7 @@ import { Product, SearchResponse, ApiResponse } from '../models/product.model';
   providedIn: 'root'
 })
 export class ProductService {
-  private readonly API_BASE = 'https://13eb9883d7c1.ngrok-free.app';
+  private readonly API_BASE = 'https://ff7da232da70.ngrok-free.app';
   private readonly headers = new HttpHeaders({
     'ngrok-skip-browser-warning': 'true',
     'Content-Type': 'application/json'

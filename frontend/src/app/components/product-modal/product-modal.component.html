@@ -24,12 +24,13 @@
       <div class="row g-4">
         
         <!-- Product Image -->
-        <div class="col-md-5">
+        <div class="col-md-6">
           <div class="image-container">
             <img [src]="product.image_url" 
                  [alt]="product.content_title"
                  class="product-image"
-                 onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                 loading="lazy"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjhGOUZBIi8+CjxwYXRoIGQ9Ik0yMDAgMTUwTDE2MCAyMDBMMjQwIDIwMFoiIGZpbGw9IiM2OTc1OEIiLz4KPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTIwIiByPSIyMCIgZmlsbD0iIzY5NzU4QiIvPgo8dGV4dCB4PSIyMDAiIHk9IjI2MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjIwIiBmaWxsPSIjNjk3NThCIj5Hw7Zyc2VsIFlvazwvdGV4dD4KPC9zdmc+'">
             
             <!-- Discount Badge -->
             <div class="discount-badge" *ngIf="getDiscountPercentage() > 0">
@@ -39,7 +40,7 @@
         </div>
 
         <!-- Product Info -->
-        <div class="col-md-7">
+        <div class="col-md-6">
           <div class="product-info">
             
             <!-- Title -->

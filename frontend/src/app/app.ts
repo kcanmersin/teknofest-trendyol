@@ -5,7 +5,6 @@ import { ProductService } from './services/product.service';
 import { Product } from './models/product.model';
 import { SearchBarComponent } from './components/search-bar/search-bar.component';
 import { ProductCardComponent } from './components/product-card/product-card.component';
-import { ProductListComponent } from './components/product-list/product-list.component';
 import { CategorySidebarComponent } from './components/category-sidebar/category-sidebar.component';
 import { ProductModalComponent } from './components/product-modal/product-modal.component';
 
@@ -17,7 +16,6 @@ import { ProductModalComponent } from './components/product-modal/product-modal.
     HttpClientModule,
     SearchBarComponent,
     ProductCardComponent,
-    ProductListComponent,
     CategorySidebarComponent,
     ProductModalComponent
   ],
@@ -29,7 +27,6 @@ export class App implements OnInit {
   isLoading = false;
   selectedCategories: string[] = [];
   currentQuery = '';
-  viewMode: 'grid' | 'list' = 'grid';
   searchMode: 'ml' | 'db' = 'ml';
   
   // Modal properties
@@ -42,9 +39,6 @@ export class App implements OnInit {
     // Component initialized
   }
 
-  setViewMode(mode: 'grid' | 'list') {
-    this.viewMode = mode;
-  }
 
   setSearchMode(mode: 'ml' | 'db') {
     this.searchMode = mode;

@@ -89,43 +89,18 @@
               </h4>
               <small style="color: #64748b;">{{ products.length }} ürün listeleniyor</small>
             </div>
-            <div class="btn-group" role="group">
-              <button type="button" 
-                      (click)="setViewMode('grid')"
-                      class="btn btn-sm"
-                      [class]="viewMode === 'grid' ? 'btn btn-sm' : 'btn btn-sm btn-outline-secondary'"
-                      [style.background]="viewMode === 'grid' ? 'linear-gradient(45deg, #0f766e, #059669)' : ''"
-                      [style.border]="viewMode === 'grid' ? 'none' : ''"
-                      [style.color]="viewMode === 'grid' ? 'white' : ''">
-                <i class="fas fa-th"></i> Kart Görünümü
-              </button>
-              <button type="button" 
-                      (click)="setViewMode('list')"
-                      class="btn btn-sm"
-                      [class]="viewMode === 'list' ? 'btn btn-sm' : 'btn btn-sm btn-outline-secondary'"
-                      [style.background]="viewMode === 'list' ? 'linear-gradient(45deg, #0f766e, #059669)' : ''"
-                      [style.border]="viewMode === 'list' ? 'none' : ''"
-                      [style.color]="viewMode === 'list' ? 'white' : ''">
-                <i class="fas fa-list"></i> Liste Görünümü
-              </button>
-            </div>
           </div>
 
-          <!-- Grid View -->
-          <div *ngIf="viewMode === 'grid'" class="row g-4">
+          <!-- Product Grid -->
+          <div class="row g-3 g-md-4">
             <div *ngFor="let product of products; let i = index" 
-                 class="col-12 col-sm-6 col-lg-4 col-xl-3"
-                 [style.animation-delay.ms]="i * 50"
-                 style="animation: fadeInUp 0.6s ease forwards; opacity: 0;">
+                 class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2"
+                 [style.animation-delay.ms]="i * 30"
+                 style="animation: fadeInUp 0.5s ease forwards; opacity: 0;">
               <div (click)="openProductModal(product)" style="cursor: pointer;">
                 <app-product-card [product]="product"></app-product-card>
               </div>
             </div>
-          </div>
-
-          <!-- List View -->
-          <div *ngIf="viewMode === 'list'">
-            <app-product-list [products]="products"></app-product-list>
           </div>
             </div>
           </div>
