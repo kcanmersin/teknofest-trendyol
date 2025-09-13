@@ -81,6 +81,7 @@ import { debounceTime, distinctUntilChanged, switchMap, Subject, of } from 'rxjs
 })
 export class SearchBarComponent implements OnInit, OnDestroy {
   @Output() search = new EventEmitter<string>();
+  @Output() queryChange = new EventEmitter<string>(); // Real-time query changes
 
   searchQuery = '';
   suggestions: any[] = [];
@@ -122,6 +123,9 @@ export class SearchBarComponent implements OnInit, OnDestroy {
     this.searchQuery = query;
     this.showSuggestions = true;
     this.searchSubject.next(query);
+    
+    // Real-time category filtering - emit immediately
+    this.queryChange.emit(query);
   }
 
   onKeyDown(event: KeyboardEvent) {

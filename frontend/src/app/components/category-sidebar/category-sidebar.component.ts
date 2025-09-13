@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductService } from '../../services/product.service';
 
@@ -180,10 +180,12 @@ interface SubCategory {
     }
   `]
 })
-export class CategorySidebarComponent implements OnInit {
+export class CategorySidebarComponent implements OnInit, OnChanges {
   @Output() categoryFilter = new EventEmitter<string[]>();
+  @Input() searchQuery: string = '';
   
   categoryGroups: CategoryGroup[] = [];
+  allCategoryGroups: CategoryGroup[] = []; // Original data
   isLoading = false;
 
   constructor(private productService: ProductService) {}
@@ -285,7 +287,7 @@ export class CategorySidebarComponent implements OnInit {
       }
     ];
 
-    this.categoryGroups = groups.map(group => {
+    this.allCategoryGroups = groups.map(group => {
       const allSubs = this.getSubcategoriesForLevel1(data.level2_categories, group.level1Names);
       return {
         name: group.name,
@@ -297,6 +299,10 @@ export class CategorySidebarComponent implements OnInit {
         subcategories: allSubs.slice(0, group.initialCount)
       };
     });
+    
+    // Initialize filtered groups
+    this.categoryGroups = JSON.parse(JSON.stringify(this.allCategoryGroups));
+    this.filterCategories();
   }
 
   getSubcategoriesForLevel1(level2Categories: any[], level1Names: string[]): SubCategory[] {
@@ -391,5 +397,57 @@ export class CategorySidebarComponent implements OnInit {
       group.subcategories = [...group.allSubcategories];
       group.showingMore = true;
     }
+  }
+  
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['searchQuery'] && this.allCategoryGroups.length > 0) {
+      this.filterCategories();
+    }
+  }
+  
+  filterCategories() {
+    if (!this.searchQuery || this.searchQuery.length < 2) {
+      // No filter - show all categories
+      this.categoryGroups = JSON.parse(JSON.stringify(this.allCategoryGroups));
+      return;
+    }
+    
+    const query = this.searchQuery.toLowerCase();
+    
+    const allGroups = this.allCategoryGroups.map(group => {
+      const groupNameMatch = group.name.toLowerCase().includes(query);
+      
+      // Check which subcategories match
+      const matchingSubcategories = group.allSubcategories.filter(sub => 
+        sub.name.toLowerCase().includes(query)
+      );
+      
+      const hasSubcategoryMatch = matchingSubcategories.length > 0;
+      
+      // Create group with highlighted/prioritized subcategories
+      const sortedSubcategories = [...group.allSubcategories].sort((a, b) => {
+        const aMatch = a.name.toLowerCase().includes(query);
+        const bMatch = b.name.toLowerCase().includes(query);
+        
+        if (aMatch && !bMatch) return -1; // a comes first
+        if (!aMatch && bMatch) return 1;  // b comes first
+        return 0; // maintain original order
+      });
+      
+      // Always show the group with original subcategories
+      return {
+        ...group,
+        subcategories: group.showingMore ? sortedSubcategories : sortedSubcategories.slice(0, group.subcategories.length),
+        allSubcategories: sortedSubcategories,
+        isExpanded: groupNameMatch || hasSubcategoryMatch, // Auto-expand if matches found
+        _priority: groupNameMatch ? 1 : hasSubcategoryMatch ? 2 : 3, // Priorities: group match > sub match > no match
+        _matchingSubCount: matchingSubcategories.length // For debugging
+      };
+    }) as (CategoryGroup & { _priority: number; _matchingSubCount: number })[];
+    
+    // Sort by priority (matches first), then maintain original order
+    this.categoryGroups = allGroups
+      .sort((a, b) => a._priority - b._priority)
+      .map(({ _priority, _matchingSubCount, ...group }) => group); // Remove priority properties
   }
 }

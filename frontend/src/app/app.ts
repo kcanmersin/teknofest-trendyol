@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ProductService } from './services/product.service';
 import { Product } from './models/product.model';
 import { SearchBarComponent } from './components/search-bar/search-bar.component';
@@ -27,15 +28,28 @@ export class App implements OnInit {
   isLoading = false;
   selectedCategories: string[] = [];
   currentQuery = '';
+  categoryFilterQuery = ''; // For real-time category filtering
   
   // Modal properties
   selectedProduct: Product | null = null;
   isModalVisible = false;
 
-  constructor(private productService: ProductService) {}
+  constructor(
+    private productService: ProductService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit() {
-    // Component initialized
+    // Check for product ID in URL on init
+    this.route.queryParams.subscribe(params => {
+      const productId = params['product'];
+      if (productId) {
+        // Find and open product modal if ID exists
+        // Note: You might want to load product by ID from backend
+        console.log('Product ID from URL:', productId);
+      }
+    });
   }
 
 
@@ -43,6 +57,11 @@ export class App implements OnInit {
   onSearch(query: string) {
     this.currentQuery = query;
     this.performSearch();
+  }
+  
+  onQueryChange(query: string) {
+    // Real-time category filtering without search
+    this.categoryFilterQuery = query;
   }
 
   onCategoryFilter(categories: string[]) {
@@ -115,11 +134,25 @@ export class App implements OnInit {
   openProductModal(product: Product) {
     this.selectedProduct = product;
     this.isModalVisible = true;
+    
+    // Update URL with product ID
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { product: product.content_id_hashed },
+      queryParamsHandling: 'merge'
+    });
   }
 
   closeProductModal() {
     this.isModalVisible = false;
     this.selectedProduct = null;
+    
+    // Remove product ID from URL
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { product: null },
+      queryParamsHandling: 'merge'
+    });
   }
 
 }

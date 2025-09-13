@@ -120,11 +120,11 @@ import { Product } from '../../models/product.model';
 
         <!-- Action Buttons -->
         <div class="d-flex gap-2 mt-auto">
-          <button class="btn btn-outline-primary btn-sm rounded-pill flex-fill">
+          <button class="btn btn-outline-primary btn-sm rounded-pill" style="flex: 1;">
             <i class="fas fa-eye me-1"></i>Detay
           </button>
-          <button class="btn btn-primary btn-sm rounded-pill flex-fill" 
-                  style="background: linear-gradient(45deg, #0f766e, #059669); border: none;">
+          <button class="btn btn-primary btn-sm rounded-pill" 
+                  style="flex: 1; background: linear-gradient(45deg, #0f766e, #059669); border: none;">
             <i class="fas fa-external-link-alt me-1"></i>Git
           </button>
         </div>
