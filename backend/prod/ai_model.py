@@ -7,7 +7,16 @@ from joblib import load
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import faiss
-from rerankers import CrossEncoderReranker, ColBERTReranker
+try:
+    from rerankers import CrossEncoderReranker, ColBERTReranker
+except ImportError:
+    try:
+        from rerankers import Reranker
+        CrossEncoderReranker = Reranker
+        ColBERTReranker = Reranker
+    except ImportError:
+        CrossEncoderReranker = None
+        ColBERTReranker = None
 from config import ARTIF_DIR, MODEL_DIR, FE_PATH, RERANKER_MODE, TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT, log_with_timestamp
 
 # ===== ML MODEL LOADING =====
@@ -80,6 +89,11 @@ def load_reranker():
     global reranker
     try:
         log_with_timestamp(f"Loading reranker ({RERANKER_MODE})...")
+        if CrossEncoderReranker is None:
+            log_with_timestamp("Reranker classes not available, skipping...", "WARN")
+            reranker = None
+            return
+
         if RERANKER_MODE == "colbert":
             reranker = ColBERTReranker()
         else:
