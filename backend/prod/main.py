@@ -8,11 +8,10 @@ from typing import List, Dict, Optional
 from datetime import datetime
 
 from config import log_with_timestamp
+import ai_model
 from ai_model import (
     load_all_models, ml_search, hybrid_semantic_search,
-    vec, X_corpus, m_click, m_order, fe, sbert_model, faiss_index,
-    sbert_ids, reranker, sbert_embs, RERANKER_MODE,
-    TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT
+    RERANKER_MODE, TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT
 )
 from service import (
     load_data, db_search, advanced_db_search, get_categories,
@@ -141,21 +140,21 @@ async def startup_event():
 
     # Status check - Debug her modeli kontrol et
     log_with_timestamp("MODEL CHECK:")
-    log_with_timestamp(f"   vec: {vec is not None}")
-    log_with_timestamp(f"   X_corpus: {X_corpus is not None}")
-    log_with_timestamp(f"   m_click: {m_click is not None}")
-    log_with_timestamp(f"   m_order: {m_order is not None}")
-    log_with_timestamp(f"   fe: {fe is not None}")
-    log_with_timestamp(f"   sbert_model: {sbert_model is not None}")
-    log_with_timestamp(f"   faiss_index: {faiss_index is not None}")
-    log_with_timestamp(f"   sbert_ids: {sbert_ids is not None}")
+    log_with_timestamp(f"   vec: {ai_model.vec is not None}")
+    log_with_timestamp(f"   X_corpus: {ai_model.X_corpus is not None}")
+    log_with_timestamp(f"   m_click: {ai_model.m_click is not None}")
+    log_with_timestamp(f"   m_order: {ai_model.m_order is not None}")
+    log_with_timestamp(f"   fe: {ai_model.fe is not None}")
+    log_with_timestamp(f"   sbert_model: {ai_model.sbert_model is not None}")
+    log_with_timestamp(f"   faiss_index: {ai_model.faiss_index is not None}")
+    log_with_timestamp(f"   sbert_ids: {ai_model.sbert_ids is not None}")
 
-    ml_ready = (vec is not None and X_corpus is not None and
-                m_click is not None and m_order is not None and fe is not None)
+    ml_ready = (ai_model.vec is not None and ai_model.X_corpus is not None and
+                ai_model.m_click is not None and ai_model.m_order is not None and ai_model.fe is not None)
     db_ready = get_database() is not None
     # Reranker olmasa da çalışabilir, sadece SBERT kullanır
-    hybrid_ready = (sbert_model is not None and faiss_index is not None and
-                   sbert_ids is not None and fe is not None)
+    hybrid_ready = (ai_model.sbert_model is not None and ai_model.faiss_index is not None and
+                   ai_model.sbert_ids is not None and ai_model.fe is not None)
 
     log_with_timestamp("SYSTEM STATUS:")
     log_with_timestamp(f"   ML Engine: {'READY' if ml_ready else 'NOT READY'}")
@@ -163,8 +162,8 @@ async def startup_event():
     log_with_timestamp(f"   Hybrid Semantic Engine: {'READY' if hybrid_ready else 'NOT READY'}")
 
     if ml_ready:
-        log_with_timestamp(f"   ML Corpus Size: {X_corpus.shape[0]} products")
-        log_with_timestamp(f"   Vocabulary Size: {len(vec.vocabulary_)} terms")
+        log_with_timestamp(f"   ML Corpus Size: {ai_model.X_corpus.shape[0]} products")
+        log_with_timestamp(f"   Vocabulary Size: {len(ai_model.vec.vocabulary_)} terms")
 
     if db_ready:
         df = get_database()
@@ -173,8 +172,8 @@ async def startup_event():
         log_with_timestamp(f"     Categories: {unique_categories} unique")
 
     if hybrid_ready:
-        log_with_timestamp(f"   SBERT Embeddings: {sbert_embs.shape[0]} products")
-        log_with_timestamp(f"   FAISS Index Size: {faiss_index.ntotal}")
+        log_with_timestamp(f"   SBERT Embeddings: {ai_model.sbert_embs.shape[0]} products")
+        log_with_timestamp(f"   FAISS Index Size: {ai_model.faiss_index.ntotal}")
         log_with_timestamp(f"   Reranker Mode: {RERANKER_MODE}")
 
     log_with_timestamp("Available endpoints:")
@@ -197,15 +196,15 @@ def healthz():
     return JSONResponse({
         "status": "ok",
         "db_rows": int(df.height) if df is not None else 0,
-        "ml_fe_rows": int(fe.height) if fe is not None else 0,
-        "has_click_model": m_click is not None,
-        "has_order_model": m_order is not None,
-        "has_tfidf": (vec is not None and X_corpus is not None),
-        "has_sbert": sbert_model is not None,
-        "has_faiss": faiss_index is not None,
-        "has_reranker": reranker is not None,
+        "ml_fe_rows": int(ai_model.fe.height) if ai_model.fe is not None else 0,
+        "has_click_model": ai_model.m_click is not None,
+        "has_order_model": ai_model.m_order is not None,
+        "has_tfidf": (ai_model.vec is not None and ai_model.X_corpus is not None),
+        "has_sbert": ai_model.sbert_model is not None,
+        "has_faiss": ai_model.faiss_index is not None,
+        "has_reranker": ai_model.reranker is not None,
         "reranker_mode": RERANKER_MODE,
-        "sbert_embeddings": int(sbert_embs.shape[0]) if sbert_embs is not None else 0
+        "sbert_embeddings": int(ai_model.sbert_embs.shape[0]) if ai_model.sbert_embs is not None else 0
     })
 
 @app.post("/search", response_model=SearchResponse)
@@ -224,15 +223,15 @@ async def search_products(request: SearchRequest):
         if mode == "ml":
             log_with_timestamp("USING SEMANTIC SEARCH ENGINE (SBERT + Reranker)")
             # Semantic ML search - prioritize hybrid semantic search
-            if (sbert_model is not None and faiss_index is not None and
-                sbert_ids is not None and fe is not None):
+            if (ai_model.sbert_model is not None and ai_model.faiss_index is not None and
+                ai_model.sbert_ids is not None and ai_model.fe is not None):
                 log_with_timestamp("Running Semantic Search (SBERT + Advanced Reranker)...")
                 recall_k = max(request.limit*8, TOPK_RECALL_DEFAULT)
                 res_df = hybrid_semantic_search(request.query, recall_k=recall_k, return_k=request.limit)
                 results = res_df.to_pandas().to_dict(orient="records")
                 log_with_timestamp(f"Semantic Search completed: {len(results)} products found")
 
-            elif vec is not None and X_corpus is not None and m_click is not None and m_order is not None and fe is not None:
+            elif ai_model.vec is not None and ai_model.X_corpus is not None and ai_model.m_click is not None and ai_model.m_order is not None and ai_model.fe is not None:
                 log_with_timestamp("Semantic search unavailable, falling back to TF-IDF + CatBoost...")
                 topk_retrieval = max(request.limit*4, 100)
                 res_df = ml_search(request.query, topk_retrieval=topk_retrieval, topk_final=request.limit)
@@ -252,8 +251,8 @@ async def search_products(request: SearchRequest):
         elif mode == "hybrid":
             log_with_timestamp("USING ENHANCED SEMANTIC SEARCH ENGINE")
             # Enhanced semantic search with full context
-            if (sbert_model is None or faiss_index is None or
-                sbert_ids is None or fe is None):
+            if (ai_model.sbert_model is None or ai_model.faiss_index is None or
+                ai_model.sbert_ids is None or ai_model.fe is None):
                 log_with_timestamp("Enhanced semantic search models not available!", "ERROR")
                 raise HTTPException(status_code=500, detail="Enhanced semantic search models not loaded")
 
