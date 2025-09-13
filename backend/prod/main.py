@@ -139,7 +139,17 @@ async def startup_event():
     if df is not None:
         index_product_data(df)
 
-    # Status check
+    # Status check - Debug her modeli kontrol et
+    log_with_timestamp("MODEL CHECK:")
+    log_with_timestamp(f"   vec: {vec is not None}")
+    log_with_timestamp(f"   X_corpus: {X_corpus is not None}")
+    log_with_timestamp(f"   m_click: {m_click is not None}")
+    log_with_timestamp(f"   m_order: {m_order is not None}")
+    log_with_timestamp(f"   fe: {fe is not None}")
+    log_with_timestamp(f"   sbert_model: {sbert_model is not None}")
+    log_with_timestamp(f"   faiss_index: {faiss_index is not None}")
+    log_with_timestamp(f"   sbert_ids: {sbert_ids is not None}")
+
     ml_ready = (vec is not None and X_corpus is not None and
                 m_click is not None and m_order is not None and fe is not None)
     db_ready = get_database() is not None
