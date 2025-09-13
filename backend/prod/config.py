@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 # ===== ML MODEL PATHS =====
 ARTIF_DIR = os.path.expanduser("~/.cache/trendyol/artifacts_enes")
 MODEL_DIR = os.path.expanduser("~/models")
-FE_PATH = "../trendyol-teknofest-hackathon/hackathon_2nd_phase_data/frontend_data.parquet"
+FE_PATH = os.path.expanduser("~/trendyol-teknofest-hackathon/hackathon_2nd_phase_data/frontend_data.parquet")
 
 # ===== HYBRID SEMANTIC SEARCH MODELS =====
 RERANKER_MODE = os.environ.get("RERANKER_MODE", "crossencoder").lower()
