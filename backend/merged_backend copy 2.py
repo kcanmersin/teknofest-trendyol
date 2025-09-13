@@ -342,19 +342,8 @@ def texts_for_reranker(ids):
     ))
     return [title_map.get(cid, cid) for cid in ids]
 
-def build_doc_text(title: str, level2_category: str, leaf_category: str) -> str:
-    """Build document text for reranker - similar to semantic.py"""
-    parts = []
-    if title and title != "Ürün":
-        parts.append(title)
-    if level2_category:
-        parts.append(level2_category)
-    if leaf_category and leaf_category != level2_category:
-        parts.append(leaf_category)
-    return " ".join(parts) if parts else "Ürün"
-
 def hybrid_semantic_search(query: str, recall_k: int = TOPK_RECALL_DEFAULT, return_k: int = TOPK_RETURN_DEFAULT):
-    """Enhanced Hybrid Semantic Search: SBERT + Advanced Reranker (semantic.py style)"""
+    """Hybrid Semantic Search: SBERT + Reranker"""
     if (sbert_model is None or faiss_index is None or 
         sbert_ids is None or reranker is None or fe is None):
         log_with_timestamp("Hybrid semantic search models not available", "WARN")
@@ -364,7 +353,7 @@ def hybrid_semantic_search(query: str, recall_k: int = TOPK_RECALL_DEFAULT, retu
             "score": []
         })
     
-    log_with_timestamp(f"Semantic Step 1: SBERT recall (top {recall_k})")
+    log_with_timestamp(f"Hybrid Step 1: SBERT recall (top {recall_k})")
     ids, sbert_scores = sbert_recall(query, recall_k)
     if not ids:
         log_with_timestamp("No products found in SBERT recall")
@@ -374,66 +363,38 @@ def hybrid_semantic_search(query: str, recall_k: int = TOPK_RECALL_DEFAULT, retu
             "score": []
         })
     
-    log_with_timestamp(f"Semantic Step 1 Complete: {len(ids)} products retrieved")
+    log_with_timestamp(f"Hybrid Step 1 Complete: {len(ids)} products retrieved")
     
-    # Join with product features first
-    df = pl.DataFrame({"content_id_hashed": ids}).join(fe, on="content_id_hashed", how="left")
-    
-    log_with_timestamp("Semantic Step 2: Advanced reranking with rich document context...")
-    
-    # Build rich document texts like semantic.py
-    doc_texts = []
-    for row in df.to_dicts():
-        doc_text = build_doc_text(
-            row.get("content_title", ""),
-            row.get("level2_category_name", ""),
-            row.get("leaf_category_name", "")
-        )
-        doc_texts.append(doc_text)
-    
-    # Rerank with rich context
-    reranker_scores = reranker.score(query, doc_texts, batch_size=64)
+    log_with_timestamp("Hybrid Step 2: Reranking with CrossEncoder/ColBERT...")
+    docs = texts_for_reranker(ids)
+    reranker_scores = reranker.score(query, docs, batch_size=64)
     
     log_with_timestamp(f"Reranker scores: min={np.min(reranker_scores):.4f}, max={np.max(reranker_scores):.4f}")
     log_with_timestamp(f"SBERT scores: min={np.min(sbert_scores):.4f}, max={np.max(sbert_scores):.4f}")
     
-    # Advanced hybrid scoring with reranker priority (semantic.py style)
-    if reranker is not None:
-        # Reranker-first approach like semantic.py
-        order_idx = np.argsort(-reranker_scores)[:return_k].astype(np.int64)
-        final_scores = reranker_scores[order_idx]
-        
-        log_with_timestamp("Using reranker-first scoring approach")
-    else:
-        # Fallback to SBERT only
-        order_idx = np.argsort(-sbert_scores)[:return_k].astype(np.int64)
-        final_scores = sbert_scores[order_idx]
+    # Hybrid scoring: 80% reranker + 20% SBERT
+    final_scores = 0.8 * minmax(reranker_scores) + 0.2 * minmax(sbert_scores)
+    log_with_timestamp(f"Final hybrid scores: min={final_scores.min():.4f}, max={final_scores.max():.4f}")
     
-    log_with_timestamp(f"Semantic Step 2 Complete: Top {return_k} products selected")
+    # Top-k selection
+    order = np.argsort(-final_scores)[:return_k]
+    out_ids = [ids[i] for i in order]
     
-    # Create result dataframe with proper ordering
-    rank_df = pl.DataFrame({
-        "__row": order_idx,
-        "__rank": np.arange(len(order_idx), dtype=np.int64),
-        "score": final_scores.astype(np.float32)
+    log_with_timestamp(f"Hybrid Step 2 Complete: Top {return_k} products selected")
+    
+    # Join with product features
+    scores_df = pl.DataFrame({
+        "content_id_hashed": out_ids,
+        "score": final_scores[order].astype(np.float32)
     })
     
-    out = (
-        df.with_row_index("__row")
-          .join(rank_df, on="__row", how="inner")
-          .sort("__rank")
-          .drop(["__row", "__rank"])
-          .with_columns([
-              pl.col("selling_price").fill_null(0.0),
-              pl.col("content_rate_avg").fill_null(0.0),
-              pl.col("content_review_count").fill_null(0),
-              pl.col("content_title").fill_null("Ürün"),
-              pl.col("image_url").fill_null(""),
-              pl.col("level1_category_name").fill_null(""),
-              pl.col("level2_category_name").fill_null(""),
-              pl.col("leaf_category_name").fill_null("")
-          ])
-    )
+    out = scores_df.join(fe, on="content_id_hashed", how="left").with_columns([
+        pl.col("selling_price").fill_null(0.0),
+        pl.col("content_rate_avg").fill_null(0.0),
+        pl.col("content_review_count").fill_null(0),
+        pl.col("content_title").fill_null("Ürün"),
+        pl.col("image_url").fill_null("")
+    ])
     
     return out
 
@@ -718,7 +679,7 @@ async def startup_event():
         log_with_timestamp(f"   Elasticsearch Index: {PRODUCTS_INDEX}")
     
     log_with_timestamp("Available endpoints:")
-    log_with_timestamp("   • POST /search (supports mode='ml'=Semantic, 'db'=Database, 'hybrid'=Enhanced)")
+    log_with_timestamp("   • POST /search (supports mode='ml', 'db', or 'hybrid')")
     log_with_timestamp("   • GET /autocomplete")
     log_with_timestamp("   • GET /healthz")
     log_with_timestamp("   • GET /categories")
@@ -758,30 +719,22 @@ async def search_products(request: SearchRequest):
         log_with_timestamp("=" * 60)
         
         if mode == "ml":
-            log_with_timestamp("USING SEMANTIC SEARCH ENGINE (SBERT + Reranker)")
-            # Semantic ML search - prioritize hybrid semantic search
-            if (sbert_model is not None and faiss_index is not None and 
-                sbert_ids is not None and reranker is not None and fe is not None):
-                log_with_timestamp("Running Semantic Search (SBERT + Advanced Reranker)...")
-                recall_k = max(request.limit*8, TOPK_RECALL_DEFAULT)
-                res_df = hybrid_semantic_search(request.query, recall_k=recall_k, return_k=request.limit)
-                results = res_df.to_pandas().to_dict(orient="records")
-                log_with_timestamp(f"Semantic Search completed: {len(results)} products found")
-                
-            elif vec is not None and X_corpus is not None and m_click is not None and m_order is not None and fe is not None:
-                log_with_timestamp("Semantic search unavailable, falling back to TF-IDF + CatBoost...")
-                topk_retrieval = max(request.limit*4, 100)
-                res_df = ml_search(request.query, topk_retrieval=topk_retrieval, topk_final=request.limit)
-                results = res_df.to_pandas().to_dict(orient="records")
-                log_with_timestamp(f"TF-IDF Search completed: {len(results)} products found")
-                
-            else:
-                log_with_timestamp("No ML models available!", "ERROR")
+            log_with_timestamp("USING MACHINE LEARNING SEARCH ENGINE")
+            # ML-based search
+            if vec is None or X_corpus is None or m_click is None or m_order is None or fe is None:
+                log_with_timestamp("ML models not available!", "ERROR")
                 raise HTTPException(status_code=500, detail="ML models not loaded")
             
+            log_with_timestamp("Running TF-IDF retrieval...")
+            topk_retrieval = max(request.limit*4, 100)
+            res_df = ml_search(request.query, topk_retrieval=topk_retrieval, topk_final=request.limit)
+            results = res_df.to_pandas().to_dict(orient="records")
+            
+            log_with_timestamp(f"ML Search completed: {len(results)} products found")
             if results:
                 avg_score = sum(r.get('score', 0) for r in results) / len(results)
-                log_with_timestamp(f"Average Semantic Score: {avg_score:.4f}")
+                avg_tfidf = sum(r.get('tfidf_sim', 0) for r in results) / len(results)
+                log_with_timestamp(f"Average ML Score: {avg_score:.4f}, Average TF-IDF: {avg_tfidf:.4f}")
             
             products = []
             for product in results:
@@ -817,22 +770,22 @@ async def search_products(request: SearchRequest):
                 ))
             
         elif mode == "hybrid":
-            log_with_timestamp("USING ENHANCED SEMANTIC SEARCH ENGINE")
-            # Enhanced semantic search with full context
+            log_with_timestamp("USING HYBRID SEMANTIC SEARCH ENGINE")
+            # Hybrid semantic search
             if (sbert_model is None or faiss_index is None or 
                 sbert_ids is None or reranker is None or fe is None):
-                log_with_timestamp("Enhanced semantic search models not available!", "ERROR")
-                raise HTTPException(status_code=500, detail="Enhanced semantic search models not loaded")
+                log_with_timestamp("Hybrid semantic search models not available!", "ERROR")
+                raise HTTPException(status_code=500, detail="Hybrid semantic search models not loaded")
             
-            log_with_timestamp("Running Enhanced SBERT + Advanced Reranker pipeline...")
-            recall_k = max(request.limit*10, TOPK_RECALL_DEFAULT)  # More candidates for better quality
+            log_with_timestamp("Running SBERT + Reranker pipeline...")
+            recall_k = max(request.limit*8, TOPK_RECALL_DEFAULT)
             res_df = hybrid_semantic_search(request.query, recall_k=recall_k, return_k=request.limit)
             results = res_df.to_pandas().to_dict(orient="records")
             
-            log_with_timestamp(f"Enhanced Semantic Search completed: {len(results)} products found")
+            log_with_timestamp(f"Hybrid Search completed: {len(results)} products found")
             if results:
                 avg_score = sum(r.get('score', 0) for r in results) / len(results)
-                log_with_timestamp(f"Average Enhanced Semantic Score: {avg_score:.4f}")
+                log_with_timestamp(f"Average Hybrid Score: {avg_score:.4f}")
             
             products = []
             for product in results:

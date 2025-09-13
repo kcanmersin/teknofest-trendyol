@@ -10,29 +10,31 @@ import { Product } from '../../models/product.model';
     <div class="card border-0 shadow-lg position-relative overflow-hidden product-card" 
          style="transition: all 0.3s ease; border-radius: 20px; display: flex; flex-direction: column;">
       
-      <!-- Discount Badge -->
-      <div *ngIf="product.discount_percentage" 
-           class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
-        <div class="discount-badge position-relative">
-          <div class="badge-content d-flex align-items-center justify-content-center text-white fw-bold">
-            <div class="d-flex align-items-baseline">
-              <span style="font-size: 12px; line-height: 1; margin-right: 1px;">%</span>
-              <span style="font-size: 20px; line-height: 1;">{{ Math.round(product.discount_percentage) }}</span>
+      <!-- Product Image -->
+      <div class="product-image-container position-relative overflow-hidden">
+        
+        <!-- Discount Badge -->
+        <div *ngIf="product.discount_percentage" 
+             class="position-absolute" 
+             style="top: 8px; left: 8px; z-index: 10;">
+          <div class="discount-badge position-relative">
+            <div class="badge-content d-flex align-items-center justify-content-center text-white fw-bold">
+              <div class="d-flex align-items-baseline">
+                <span style="font-size: 12px; line-height: 1; margin-right: 1px;">%</span>
+                <span style="font-size: 20px; line-height: 1;">{{ Math.round(product.discount_percentage) }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Favorite Button -->
-      <div class="position-absolute top-0 end-0 m-3" style="z-index: 10;">
-        <button class="btn btn-light btn-sm rounded-circle shadow-sm" 
-                style="width: 40px; height: 40px; backdrop-filter: blur(10px); background: rgba(255,255,255,0.9) !important;">
-          <i class="far fa-heart"></i>
-        </button>
-      </div>
-      
-      <!-- Product Image -->
-      <div class="product-image-container position-relative overflow-hidden">
+        <!-- Favorite Button -->
+        <div class="position-absolute" 
+             style="top: 8px; right: 8px; z-index: 10;">
+          <button class="btn btn-light btn-sm rounded-circle shadow-sm" 
+                  style="width: 40px; height: 40px; backdrop-filter: blur(10px); background: rgba(255,255,255,0.9) !important;">
+            <i class="far fa-heart"></i>
+          </button>
+        </div>
         <div class="image-wrapper">
           <img [src]="product.image_url" 
                [alt]="product.content_title"
@@ -145,8 +147,7 @@ import { Product } from '../../models/product.model';
       bottom: 0;
       background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
       border-radius: 12px;
-      transform: rotate(-8deg);
-      animation: pulse-discount 2s infinite;
+      transform: rotate(-5deg);
     }
     
     .discount-badge::after {
@@ -158,7 +159,7 @@ import { Product } from '../../models/product.model';
       bottom: 2px;
       background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
       border-radius: 10px;
-      transform: rotate(-8deg);
+      transform: rotate(-5deg);
       box-shadow: inset 0 1px 2px rgba(255,255,255,0.3);
     }
     
@@ -171,20 +172,6 @@ import { Product } from '../../models/product.model';
       border-radius: 12px;
     }
     
-    @keyframes pulse-discount {
-      0%, 100% { 
-        box-shadow: 0 0 10px rgba(220, 38, 38, 0.6); 
-      }
-      50% { 
-        box-shadow: 0 0 20px rgba(220, 38, 38, 0.8), 0 0 30px rgba(220, 38, 38, 0.4); 
-      }
-    }
-    
-    .discount-badge:hover::before,
-    .discount-badge:hover::after {
-      transform: rotate(-5deg) scale(1.05);
-      transition: all 0.3s ease;
-    }
     
     .original-price {
       position: relative;

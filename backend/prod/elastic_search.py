@@ -1,10 +1,10 @@
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 from typing import List, Dict
+import polars as pl
+from .config import ELASTICSEARCH_URL, PRODUCTS_INDEX, log_with_timestamp
 
-from .config import ELASTICSEARCH_URL, PRODUCTS_INDEX
-from .ml_loader import df
-from .utils import log_with_timestamp
-
+# ===== ELASTICSEARCH CLIENT =====
 es_client = None
 
 def init_elasticsearch():
@@ -12,13 +12,14 @@ def init_elasticsearch():
     global es_client
     try:
         es_client = Elasticsearch([ELASTICSEARCH_URL])
-        
+
+        # Check if connection is successful
         if es_client.ping():
             log_with_timestamp("Elasticsearch connection successful")
-            
+
+            # Create index if it doesn't exist
             if not es_client.indices.exists(index=PRODUCTS_INDEX):
                 create_autocomplete_index()
-                index_product_data()
             else:
                 log_with_timestamp(f"Elasticsearch index '{PRODUCTS_INDEX}' already exists")
         else:
@@ -32,7 +33,7 @@ def create_autocomplete_index():
     """Create Elasticsearch index with autocomplete settings"""
     if es_client is None:
         return
-    
+
     index_body = {
         "settings": {
             "analysis": {
@@ -84,26 +85,27 @@ def create_autocomplete_index():
             }
         }
     }
-    
+
     try:
         es_client.indices.create(index=PRODUCTS_INDEX, body=index_body)
         log_with_timestamp(f"Created Elasticsearch index: {PRODUCTS_INDEX}")
     except Exception as e:
         log_with_timestamp(f"Failed to create index: {e}", "ERROR")
 
-def index_product_data():
+def index_product_data(df: pl.DataFrame):
     """Index product data for autocomplete"""
     if es_client is None or df is None:
         return
-    
+
     try:
         log_with_timestamp("Indexing product data for autocomplete...")
-        
+
+        # Sample data for indexing (to avoid overwhelming ES)
         sample_df = df.sample(min(10000, len(df)))
-        
+
         docs = []
         doc_id = 1
-        
+
         # Index product titles
         for row in sample_df.to_dicts():
             title = row.get('content_title', '').strip()
@@ -122,10 +124,10 @@ def index_product_data():
                     }
                 })
                 doc_id += 1
-        
+
         # Index unique categories
         categories = df.select("level2_category_name").unique().to_series().to_list()
-        for cat in categories[:500]:
+        for cat in categories[:500]:  # Limit categories
             if cat and len(cat) > 2:
                 docs.append({
                     "_index": PRODUCTS_INDEX,
@@ -138,13 +140,12 @@ def index_product_data():
                     }
                 })
                 doc_id += 1
-        
+
         # Bulk index
-        from elasticsearch.helpers import bulk
         bulk(es_client, docs, chunk_size=1000)
-        
+
         log_with_timestamp(f"Indexed {len(docs)} documents for autocomplete")
-        
+
     except Exception as e:
         log_with_timestamp(f"Failed to index product data: {e}", "ERROR")
 
@@ -152,7 +153,7 @@ def get_autocomplete_suggestions(query: str, limit: int = 10) -> List[Dict]:
     """Get autocomplete suggestions from Elasticsearch"""
     if es_client is None or not query or len(query) < 2:
         return []
-    
+
     try:
         search_body = {
             "query": {
@@ -184,16 +185,16 @@ def get_autocomplete_suggestions(query: str, limit: int = 10) -> List[Dict]:
             "size": limit,
             "_source": ["title", "suggestion_type", "category_level2"]
         }
-        
+
         response = es_client.search(index=PRODUCTS_INDEX, body=search_body)
-        
+
         suggestions = []
         seen = set()
-        
+
         for hit in response['hits']['hits']:
             source = hit['_source']
             title = source.get('title', '').strip()
-            
+
             if title and title.lower() not in seen and len(title) > 1:
                 suggestions.append({
                     "text": title,
@@ -201,9 +202,9 @@ def get_autocomplete_suggestions(query: str, limit: int = 10) -> List[Dict]:
                     "category": source.get('category_level2', '')
                 })
                 seen.add(title.lower())
-        
+
         return suggestions[:limit]
-        
+
     except Exception as e:
         log_with_timestamp(f"Autocomplete search failed: {e}", "WARN")
         return []

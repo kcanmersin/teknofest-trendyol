@@ -47,7 +47,7 @@
             <h3 class="product-title">{{product.content_title}}</h3>
             
             <!-- Category Path -->
-            <div class="category-path mb-3">
+            <div class="category-path">
               <span class="category-item" *ngIf="product.level1_category_name">
                 <i class="fas fa-folder text-muted me-1"></i>{{product.level1_category_name}}
               </span>
@@ -62,7 +62,7 @@
             </div>
 
             <!-- Rating -->
-            <div class="rating-section mb-3" *ngIf="product.content_rate_avg">
+            <div class="rating-section" *ngIf="product.content_rate_avg">
               <div class="stars">
                 <i *ngFor="let star of getRatingStars(product.content_rate_avg)" 
                    [class]="star" 
@@ -75,7 +75,7 @@
             </div>
 
             <!-- Price Section -->
-            <div class="price-section mb-4">
+            <div class="price-section">
               <div class="current-price">
                 <span class="price-amount">{{product.selling_price | number:'1.2-2'}} ₺</span>
               </div>
