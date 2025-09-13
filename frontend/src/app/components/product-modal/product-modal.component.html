@@ -109,26 +109,6 @@
                   </div>
                 </div>
 
-                <!-- ML Specific Stats -->
-                <div class="stat-item" *ngIf="product.tfidf_sim">
-                  <div class="stat-icon">
-                    <i class="fas fa-brain text-info"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-label">TF-IDF Benzerlik</div>
-                    <div class="stat-value">{{(product.tfidf_sim * 100) | number:'1.1-1'}}%</div>
-                  </div>
-                </div>
-
-                <div class="stat-item" *ngIf="product.score">
-                  <div class="stat-icon">
-                    <i class="fas fa-chart-line text-success"></i>
-                  </div>
-                  <div class="stat-content">
-                    <div class="stat-label">ML Skoru</div>
-                    <div class="stat-value">{{(product.score * 100) | number:'1.1-1'}}%</div>
-                  </div>
-                </div>
               </div>
             </div>
 

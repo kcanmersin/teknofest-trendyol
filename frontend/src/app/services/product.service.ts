@@ -21,7 +21,7 @@ export class ProductService {
     });
   }
 
-  searchProducts(query: string, limit: number = 50, mode: string = 'db'): Observable<SearchResponse> {
+  searchProducts(query: string, limit: number = 50, mode: string = 'ml'): Observable<SearchResponse> {
     return this.http.post<SearchResponse>(`${this.API_BASE}/search`, 
       { query, limit, mode }, 
       { headers: this.headers }
@@ -65,6 +65,12 @@ export class ProductService {
 
   refreshData(): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.API_BASE}/refresh`, {}, { 
+      headers: this.headers 
+    });
+  }
+
+  getAutocomplete(query: string): Observable<any> {
+    return this.http.get<any>(`${this.API_BASE}/autocomplete?q=${encodeURIComponent(query)}`, { 
       headers: this.headers 
     });
   }

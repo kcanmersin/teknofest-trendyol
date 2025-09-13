@@ -47,13 +47,15 @@ import { Product } from '../../models/product.model';
       <div class="card-body p-4 d-flex flex-column" style="flex: 1;">
         <!-- Category Badge -->
         <div class="mb-3">
-          <div class="d-flex flex-wrap gap-1">
-            <span class="badge text-white rounded-pill px-2 py-1 shadow-sm" 
-                  style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 12px;">
+          <div class="d-flex flex-column gap-1 align-items-start">
+            <span class="badge text-white rounded-pill px-3 py-1 shadow-sm" 
+                  style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 12px;"
+                  [title]="product.level1_category_name">
               {{ product.level1_category_name }}
             </span>
             <span class="badge bg-secondary text-white rounded-pill px-2 py-1" 
-                  style="font-size: 11px;">
+                  style="font-size: 11px;"
+                  [title]="product.level2_category_name">
               {{ product.level2_category_name }}
             </span>
           </div>
@@ -62,9 +64,9 @@ import { Product } from '../../models/product.model';
         <!-- Product Title with Green Strip -->
         <div class="position-relative mb-3">
           <div class="bg-success rounded-end-pill position-absolute top-0 start-0" 
-               style="width: 4px; height: 100%; z-index: 1;"></div>
-          <h5 class="card-title fw-bold ps-3" 
-              style="line-height: 1.4; height: 2.8em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 8px 12px; border-radius: 12px; margin: 0; font-size: 1.1rem;"
+               style="width: 7px; height: 100%; z-index: 1;"></div>
+          <h5 class="card-title fw-bold ps-4" 
+              style="line-height: 1.3; height: 5.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; background: linear-gradient(135deg, #0f766e10, #05966905); padding: 14px 16px; border-radius: 12px; margin: 0; font-size: 1rem;"
               [title]="product.content_title">
             {{ product.content_title }}
           </h5>
@@ -93,23 +95,25 @@ import { Product } from '../../models/product.model';
         </div>
         
         <!-- Product Details -->
-        <div class="bg-light bg-opacity-50 p-2 rounded-3 mb-2" style="border-left: 4px solid #0f766e;">
-          <div class="row g-1" style="font-size: 13px;">
-            <div class="col-12">
-              <span class="text-muted">Kategori:</span> 
-              {{ product.level2_category_name }}
-            </div>
-            <div class="col-12">
-              <span class="text-muted">Alt Kategori:</span> 
-              {{ product.leaf_category_name }}
+        <div class="bg-light bg-opacity-50 p-3 rounded-3 mb-2" style="border-left: 4px solid #0f766e;">
+          <div class="row g-2" style="font-size: 12px;">
+            <div class="col-12" *ngIf="product.leaf_category_name">
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2" style="min-width: 60px;">Kategori:</span>
+                <span class="text-dark fw-medium" [title]="product.leaf_category_name">{{ product.leaf_category_name }}</span>
+              </div>
             </div>
             <div class="col-6">
-              <span class="text-muted">Satıcı:</span> 
-              <span class="badge text-white" style="background: linear-gradient(45deg, #0f766e, #059669);">{{ product.merchant_count || 0 }}</span>
+              <div class="d-flex align-items-center justify-content-between">
+                <span class="text-muted">Satıcı:</span> 
+                <span class="badge text-white" style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 10px;">{{ product.merchant_count || 0 }}</span>
+              </div>
             </div>
             <div class="col-6">
-              <span class="text-muted">Oy:</span> 
-              <span class="badge text-white" style="background: linear-gradient(45deg, #0f766e, #059669);">{{ product.content_rate_count }}</span>
+              <div class="d-flex align-items-center justify-content-between">
+                <span class="text-muted">Oy:</span> 
+                <span class="badge text-white" style="background: linear-gradient(45deg, #0f766e, #059669); font-size: 10px;">{{ product.content_rate_count || 0 }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -229,9 +233,10 @@ import { Product } from '../../models/product.model';
       }
     }
     
-    /* Product Image Styles - Smaller default height */
+    /* Product Image Styles - Fixed size, no responsive */
     .product-image-container {
-      height: 200px;
+      height: 280px;
+      width: 100%;
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       border-bottom: 1px solid rgba(226, 232, 240, 0.3);
     }
@@ -261,69 +266,14 @@ import { Product } from '../../models/product.model';
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
     }
     
-    /* Responsive card and image adjustments - Smaller cards */
+    /* Fixed card size - no responsive */
     .product-card {
-      height: 100%;
-      min-height: 420px;
+      height: 560px;
+      max-height: 560px;
+      min-height: 560px;
     }
     
-    @media (min-width: 1400px) {
-      .product-card {
-        min-height: 450px;
-      }
-      
-      .product-image-container {
-        height: 200px;
-      }
-    }
-    
-    @media (max-width: 1199px) {
-      .product-card {
-        min-height: 400px;
-      }
-      
-      .product-image-container {
-        height: 180px;
-      }
-    }
-    
-    @media (max-width: 991px) {
-      .product-card {
-        min-height: 380px;
-      }
-      
-      .product-image-container {
-        height: 160px;
-      }
-    }
-    
-    @media (max-width: 767px) {
-      .product-card {
-        min-height: 360px;
-      }
-      
-      .product-image-container {
-        height: 140px;
-      }
-      
-      .image-wrapper {
-        padding: 6px;
-      }
-    }
-    
-    @media (max-width: 575px) {
-      .product-card {
-        min-height: 340px;
-      }
-      
-      .product-image-container {
-        height: 120px;
-      }
-      
-      .card-body {
-        padding: 12px !important;
-      }
-    }
+    /* No responsive - fixed sizes everywhere */
   `]
 })
 export class ProductCardComponent {
@@ -343,12 +293,13 @@ export class ProductCardComponent {
   }
 
   getStars(rating: number): number[] {
-    const stars = Math.floor(rating);
-    return Array(Math.min(stars, 5)).fill(0);
+    const stars = Math.floor(rating || 0);
+    return Array(Math.min(Math.max(stars, 0), 5)).fill(0);
   }
 
   getEmptyStars(rating: number): number[] {
-    const emptyStars = 5 - Math.floor(rating);
+    const stars = Math.floor(rating || 0);
+    const emptyStars = 5 - Math.min(Math.max(stars, 0), 5);
     return Array(Math.max(emptyStars, 0)).fill(0);
   }
 

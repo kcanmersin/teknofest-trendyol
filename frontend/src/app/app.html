@@ -1,50 +1,5 @@
 <div class="min-vh-100" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 30%, #cbd5e1 100%); padding: 20px;">
   <div class="container-fluid">
-    <!-- Header Section -->
-    <div class="row justify-content-center mb-4">
-      <div class="col-12">
-        <div class="text-center mb-4">
-          <h1 class="display-4 fw-bold mb-3" style="color: #1e293b;">
-            <i class="fas fa-shopping-bag me-3" style="color: #0f766e;"></i>Ürün Arama
-          </h1>
-          <p class="lead" style="color: #475569;">Ürünleri ara, keşfet ve analiz et 🚀</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search Mode Toggle -->
-    <div class="row justify-content-center mb-3">
-      <div class="col-12 col-lg-10">
-        <div class="bg-white rounded-4 p-3 shadow-sm">
-          <div class="d-flex justify-content-center align-items-center">
-            <span class="me-3 fw-semibold" style="color: #475569;">Arama Tipi:</span>
-            <div class="btn-group" role="group">
-              <button type="button" 
-                      (click)="setSearchMode('ml')"
-                      class="btn btn-sm px-4"
-                      [class]="searchMode === 'ml' ? 'btn btn-sm px-4' : 'btn btn-sm btn-outline-primary px-4'"
-                      [style.background]="searchMode === 'ml' ? 'linear-gradient(45deg, #3b82f6, #1d4ed8)' : ''"
-                      [style.border]="searchMode === 'ml' ? 'none' : ''"
-                      [style.color]="searchMode === 'ml' ? 'white' : ''">
-                <i class="fas fa-brain me-2"></i>ML Arama
-              </button>
-              <button type="button" 
-                      (click)="setSearchMode('db')"
-                      class="btn btn-sm px-4"
-                      [class]="searchMode === 'db' ? 'btn btn-sm px-4' : 'btn btn-sm btn-outline-primary px-4'"
-                      [style.background]="searchMode === 'db' ? 'linear-gradient(45deg, #3b82f6, #1d4ed8)' : ''"
-                      [style.border]="searchMode === 'db' ? 'none' : ''"
-                      [style.color]="searchMode === 'db' ? 'white' : ''">
-                <i class="fas fa-database me-2"></i>DB Arama
-              </button>
-            </div>
-            <small class="ms-3" style="color: #64748b;">
-              {{ searchMode === 'ml' ? 'Makine Öğrenmesi ile akıllı arama' : 'Veritabanı tabanlı hızlı arama' }}
-            </small>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Search Section -->
     <div class="row justify-content-center mb-4">
@@ -58,18 +13,18 @@
     </div>
 
     <!-- Main Content with Sidebar -->
-    <div class="row justify-content-center">
-      <div class="col-12 col-xl-11">
+    <div class="row">
+      <div class="col-12">
         <div class="row g-3">
           <!-- Category Sidebar -->
-          <div class="col-12 col-lg-3 col-xl-2">
+          <div class="col-12 col-lg-3 col-xl-3">
             <app-category-sidebar 
               (categoryFilter)="onCategoryFilter($event)">
             </app-category-sidebar>
           </div>
 
           <!-- Results Section -->
-          <div class="col-12 col-lg-9 col-xl-10">
+          <div class="col-12 col-lg-9 col-xl-9">
         <div *ngIf="products.length === 0 && !isLoading" 
              class="text-center py-5">
           <div class="bg-white rounded-4 p-5 shadow-sm border">
@@ -94,7 +49,7 @@
           <!-- Product Grid -->
           <div class="row g-3 g-md-4">
             <div *ngFor="let product of products; let i = index" 
-                 class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-3 col-xxl-2"
+                 class="col-6 col-md-4 col-xl-3"
                  [style.animation-delay.ms]="i * 30"
                  style="animation: fadeInUp 0.5s ease forwards; opacity: 0;">
               <div (click)="openProductModal(product)" style="cursor: pointer;">

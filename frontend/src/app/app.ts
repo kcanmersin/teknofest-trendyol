@@ -27,7 +27,6 @@ export class App implements OnInit {
   isLoading = false;
   selectedCategories: string[] = [];
   currentQuery = '';
-  searchMode: 'ml' | 'db' = 'ml';
   
   // Modal properties
   selectedProduct: Product | null = null;
@@ -40,14 +39,6 @@ export class App implements OnInit {
   }
 
 
-  setSearchMode(mode: 'ml' | 'db') {
-    this.searchMode = mode;
-    console.log('🔧 Search mode changed to:', mode);
-    // Eğer aktif bir arama varsa, yeni mode ile tekrar ara
-    if (this.currentQuery || this.selectedCategories.length > 0) {
-      this.performSearch();
-    }
-  }
 
   onSearch(query: string) {
     this.currentQuery = query;
@@ -84,8 +75,8 @@ export class App implements OnInit {
         searchParams.query = '';
       }
 
-      // Search mode'u ekle
-      searchParams.mode = this.searchMode;
+      // ML mode kullan
+      searchParams.mode = 'ml';
       
       this.productService.advancedSearch(searchParams).subscribe({
         next: (data) => {
@@ -98,8 +89,8 @@ export class App implements OnInit {
         }
       });
     } else {
-      // Normal arama
-      this.productService.searchProducts(this.currentQuery, 50, this.searchMode).subscribe({
+      // Normal arama - ML mode kullan
+      this.productService.searchProducts(this.currentQuery, 50, 'ml').subscribe({
         next: (data) => {
           this.products = data.products;
           this.isLoading = false;

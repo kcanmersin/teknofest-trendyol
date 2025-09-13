@@ -10,9 +10,6 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from elasticsearch import Elasticsearch
 import asyncio
-from sentence_transformers import SentenceTransformer
-import faiss
-from rerankers import CrossEncoderReranker, ColBERTReranker
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
@@ -41,16 +38,6 @@ id_list = None
 id_to_idx = {}
 m_click = None
 m_order = None
-
-# ===== HYBRID SEMANTIC SEARCH MODELS =====
-sbert_model = None
-sbert_ids = None
-sbert_embs = None
-faiss_index = None
-reranker = None
-RERANKER_MODE = os.environ.get("RERANKER_MODE", "crossencoder").lower()
-TOPK_RECALL_DEFAULT = 400
-TOPK_RETURN_DEFAULT = 50
 
 # ===== ELASTICSEARCH SETUP =====
 es_client = None
@@ -82,32 +69,6 @@ try:
     log_with_timestamp("ML Order prediction model loaded successfully")
 except Exception as e:
     log_with_timestamp(f"ML Order model failed to load: {e}", "WARN")
-
-# ===== HYBRID SEMANTIC SEARCH MODEL LOADING =====
-try:
-    log_with_timestamp("Loading SBERT model...")
-    sbert_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-mpnet-base-v2")
-    sbert_ids = load(os.path.join(ARTIF_DIR, "sbert_ids.joblib"))
-    sbert_embs = np.load(os.path.join(ARTIF_DIR, "sbert_emb.npy"))
-    faiss_index = faiss.read_index(os.path.join(ARTIF_DIR, "sbert_faiss.index"))
-    log_with_timestamp(f"SBERT models loaded successfully (embeddings: {sbert_embs.shape}, index size: {faiss_index.ntotal})")
-except Exception as e:
-    log_with_timestamp(f"SBERT models failed to load: {e}", "WARN")
-    sbert_model = None
-    sbert_ids = None
-    sbert_embs = None
-    faiss_index = None
-
-try:
-    log_with_timestamp(f"Loading reranker ({RERANKER_MODE})...")
-    if RERANKER_MODE == "colbert":
-        reranker = ColBERTReranker()
-    else:
-        reranker = CrossEncoderReranker()
-    log_with_timestamp(f"Reranker loaded successfully: {RERANKER_MODE}")
-except Exception as e:
-    log_with_timestamp(f"Reranker failed to load: {e}", "WARN")
-    reranker = None
 
 # ===== DB DATA LOADING =====
 df = None
@@ -143,7 +104,7 @@ except Exception as e:
 class SearchRequest(BaseModel):
     query: str
     limit: Optional[int] = 50
-    mode: Optional[str] = "db"  # "ml", "db", or "hybrid"
+    mode: Optional[str] = "db"  # "ml" or "db"
 
 class ProductResponse(BaseModel):
     content_id_hashed: str
@@ -181,7 +142,7 @@ class AdvancedSearchRequest(BaseModel):
     min_rating: Optional[float] = None
     min_review_count: Optional[int] = None
     limit: int = 50
-    mode: Optional[str] = "db"  # "ml", "db", or "hybrid"
+    mode: Optional[str] = "db"  # "ml" or "db"
 
 class AutocompleteResponse(BaseModel):
     suggestions: List[Dict[str, str]]
@@ -193,16 +154,6 @@ def norm_query(s: str) -> str:
         return ""
     s = unicodedata.normalize("NFKD", s.lower().strip())
     s = re.sub(r"[_/\-\\]", " ", s)
-    s = re.sub(r"[^0-9a-zçğıöşü\s]", " ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
-
-def norm_text(s: str) -> str:
-    """SBERT için text normalization"""
-    if not isinstance(s, str): 
-        return ""
-    s = unicodedata.normalize("NFKD", s.lower().strip())
-    s = re.sub(r"[_\-/]", " ", s)
     s = re.sub(r"[^0-9a-zçğıöşü\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
@@ -312,93 +263,7 @@ def ml_search(query: str, topk_retrieval=200, topk_final=50):
 
     return out
 
-# ===== HYBRID SEMANTIC SEARCH FUNCTIONS =====
-def sbert_recall(query: str, topk: int):
-    """SBERT + FAISS ile semantic retrieval"""
-    if sbert_model is None or faiss_index is None or sbert_ids is None:
-        return [], []
-    
-    q = norm_text(query)
-    if not q:
-        return [], []
-    
-    qv = sbert_model.encode([q], normalize_embeddings=True).astype("float32")
-    sims, idxs = faiss_index.search(qv, topk)
-    ids = [sbert_ids[i] for i in idxs[0]]
-    scores = sims[0]
-    return ids, scores
-
-def texts_for_reranker(ids):
-    """Reranker için product title'ları al"""
-    if fe is None:
-        return []
-    
-    df_filtered = fe.filter(pl.col("content_id_hashed").is_in(ids)).select(
-        ["content_id_hashed", "content_title"]
-    )
-    title_map = dict(zip(
-        df_filtered.get_column("content_id_hashed").to_list(),
-        df_filtered.get_column("content_title").to_list()
-    ))
-    return [title_map.get(cid, cid) for cid in ids]
-
-def hybrid_semantic_search(query: str, recall_k: int = TOPK_RECALL_DEFAULT, return_k: int = TOPK_RETURN_DEFAULT):
-    """Hybrid Semantic Search: SBERT + Reranker"""
-    if (sbert_model is None or faiss_index is None or 
-        sbert_ids is None or reranker is None or fe is None):
-        log_with_timestamp("Hybrid semantic search models not available", "WARN")
-        return pl.DataFrame({
-            "content_id_hashed": [], "content_title": [], "image_url": [],
-            "selling_price": [], "content_rate_avg": [], "content_review_count": [], 
-            "score": []
-        })
-    
-    log_with_timestamp(f"Hybrid Step 1: SBERT recall (top {recall_k})")
-    ids, sbert_scores = sbert_recall(query, recall_k)
-    if not ids:
-        log_with_timestamp("No products found in SBERT recall")
-        return pl.DataFrame({
-            "content_id_hashed": [], "content_title": [], "image_url": [],
-            "selling_price": [], "content_rate_avg": [], "content_review_count": [], 
-            "score": []
-        })
-    
-    log_with_timestamp(f"Hybrid Step 1 Complete: {len(ids)} products retrieved")
-    
-    log_with_timestamp("Hybrid Step 2: Reranking with CrossEncoder/ColBERT...")
-    docs = texts_for_reranker(ids)
-    reranker_scores = reranker.score(query, docs, batch_size=64)
-    
-    log_with_timestamp(f"Reranker scores: min={np.min(reranker_scores):.4f}, max={np.max(reranker_scores):.4f}")
-    log_with_timestamp(f"SBERT scores: min={np.min(sbert_scores):.4f}, max={np.max(sbert_scores):.4f}")
-    
-    # Hybrid scoring: 80% reranker + 20% SBERT
-    final_scores = 0.8 * minmax(reranker_scores) + 0.2 * minmax(sbert_scores)
-    log_with_timestamp(f"Final hybrid scores: min={final_scores.min():.4f}, max={final_scores.max():.4f}")
-    
-    # Top-k selection
-    order = np.argsort(-final_scores)[:return_k]
-    out_ids = [ids[i] for i in order]
-    
-    log_with_timestamp(f"Hybrid Step 2 Complete: Top {return_k} products selected")
-    
-    # Join with product features
-    scores_df = pl.DataFrame({
-        "content_id_hashed": out_ids,
-        "score": final_scores[order].astype(np.float32)
-    })
-    
-    out = scores_df.join(fe, on="content_id_hashed", how="left").with_columns([
-        pl.col("selling_price").fill_null(0.0),
-        pl.col("content_rate_avg").fill_null(0.0),
-        pl.col("content_review_count").fill_null(0),
-        pl.col("content_title").fill_null("Ürün"),
-        pl.col("image_url").fill_null("")
-    ])
-    
-    return out
-
-# ===== DB HELPER FUNCTIONS ===
+# ===== DB HELPER FUNCTIONS =====
 def db_search(query: str, limit: int = 50) -> List[Dict]:
     """DB-based search using Polars filtering"""
     if df is None:
@@ -652,13 +517,10 @@ async def startup_event():
                 m_click is not None and m_order is not None and fe is not None)
     db_ready = df is not None
     es_ready = es_client is not None
-    hybrid_ready = (sbert_model is not None and faiss_index is not None and 
-                   sbert_ids is not None and reranker is not None and fe is not None)
     
     log_with_timestamp("SYSTEM STATUS:")
     log_with_timestamp(f"   ML Engine: {'READY' if ml_ready else 'NOT READY'}")
     log_with_timestamp(f"   DB Engine: {'READY' if db_ready else 'NOT READY'}")
-    log_with_timestamp(f"   Hybrid Semantic Engine: {'READY' if hybrid_ready else 'NOT READY'}")
     log_with_timestamp(f"   Elasticsearch: {'READY' if es_ready else 'NOT READY'}")
     
     if ml_ready:
@@ -670,16 +532,11 @@ async def startup_event():
         unique_categories = df.select("level2_category_name").n_unique()
         log_with_timestamp(f"     Categories: {unique_categories} unique")
     
-    if hybrid_ready:
-        log_with_timestamp(f"   SBERT Embeddings: {sbert_embs.shape[0]} products")
-        log_with_timestamp(f"   FAISS Index Size: {faiss_index.ntotal}")
-        log_with_timestamp(f"   Reranker Mode: {RERANKER_MODE}")
-    
     if es_ready:
         log_with_timestamp(f"   Elasticsearch Index: {PRODUCTS_INDEX}")
     
     log_with_timestamp("Available endpoints:")
-    log_with_timestamp("   • POST /search (supports mode='ml', 'db', or 'hybrid')")
+    log_with_timestamp("   • POST /search (supports mode='ml' or 'db')")
     log_with_timestamp("   • GET /autocomplete")
     log_with_timestamp("   • GET /healthz")
     log_with_timestamp("   • GET /categories")
@@ -688,7 +545,7 @@ async def startup_event():
 
 @app.get("/")
 async def root():
-    return {"message": "Trendyol Unified Search API", "status": "active", "modes": ["ml", "db", "hybrid"]}
+    return {"message": "Trendyol Unified Search API", "status": "active", "modes": ["ml", "db"]}
 
 @app.get("/healthz")
 def healthz():
@@ -698,12 +555,7 @@ def healthz():
         "ml_fe_rows": int(fe.height) if fe is not None else 0,
         "has_click_model": m_click is not None,
         "has_order_model": m_order is not None,
-        "has_tfidf": (vec is not None and X_corpus is not None),
-        "has_sbert": sbert_model is not None,
-        "has_faiss": faiss_index is not None,
-        "has_reranker": reranker is not None,
-        "reranker_mode": RERANKER_MODE,
-        "sbert_embeddings": int(sbert_embs.shape[0]) if sbert_embs is not None else 0
+        "has_tfidf": (vec is not None and X_corpus is not None)
     })
 
 @app.post("/search", response_model=SearchResponse)
@@ -766,55 +618,6 @@ async def search_products(request: SearchRequest):
                     content_rate_avg=product.get('content_rate_avg'),
                     discount_percentage=discount_pct,
                     tfidf_sim=product.get('tfidf_sim'),
-                    score=product.get('score')
-                ))
-            
-        elif mode == "hybrid":
-            log_with_timestamp("USING HYBRID SEMANTIC SEARCH ENGINE")
-            # Hybrid semantic search
-            if (sbert_model is None or faiss_index is None or 
-                sbert_ids is None or reranker is None or fe is None):
-                log_with_timestamp("Hybrid semantic search models not available!", "ERROR")
-                raise HTTPException(status_code=500, detail="Hybrid semantic search models not loaded")
-            
-            log_with_timestamp("Running SBERT + Reranker pipeline...")
-            recall_k = max(request.limit*8, TOPK_RECALL_DEFAULT)
-            res_df = hybrid_semantic_search(request.query, recall_k=recall_k, return_k=request.limit)
-            results = res_df.to_pandas().to_dict(orient="records")
-            
-            log_with_timestamp(f"Hybrid Search completed: {len(results)} products found")
-            if results:
-                avg_score = sum(r.get('score', 0) for r in results) / len(results)
-                log_with_timestamp(f"Average Hybrid Score: {avg_score:.4f}")
-            
-            products = []
-            for product in results:
-                title = product.get('content_title', 'Ürün')
-                if title == 'Lorem Ipsum':
-                    title = f"Ürün"
-                
-                # İndirim yüzdesini hesapla
-                original = product.get('original_price', 0)
-                selling = product.get('selling_price', 0)
-                discount_pct = None
-                if original and selling and original > selling and original > 0:
-                    discount_pct = round(((original - selling) / original) * 100, 1)
-                
-                products.append(ProductResponse(
-                    content_id_hashed=product.get('content_id_hashed', ''),
-                    content_title=title,
-                    image_url=product.get('image_url', ''),
-                    level1_category_name="",
-                    level2_category_name="",
-                    leaf_category_name="",
-                    merchant_count=None,
-                    original_price=0.0,
-                    selling_price=product.get('selling_price', 0.0),
-                    discounted_price=0.0,
-                    content_review_count=int(product.get('content_review_count', 0)),
-                    content_rate_count=0,
-                    content_rate_avg=product.get('content_rate_avg'),
-                    discount_percentage=discount_pct,
                     score=product.get('score')
                 ))
             
@@ -888,7 +691,7 @@ async def search_products(request: SearchRequest):
 @app.get("/search")
 def search_get(q: str = Query(..., description="Arama sorgusu"),
                topk: int = Query(50, ge=1, le=200),
-               mode: str = Query("ml", description="Search mode: ml, db, or hybrid")):
+               mode: str = Query("ml", description="Search mode: ml or db")):
     """GET endpoint for ML compatibility"""
     try:
         request = SearchRequest(query=q, limit=topk, mode=mode)
