@@ -1,8 +1,7 @@
 import polars as pl
 import random
 from typing import List, Dict, Optional
-from .config import FE_PATH, log_with_timestamp
-from .ai_model import ml_search, hybrid_semantic_search
+from config import FE_PATH, log_with_timestamp
 
 # ===== DB DATA LOADING =====
 df = None

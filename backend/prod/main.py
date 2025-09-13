@@ -7,19 +7,19 @@ import logging
 from typing import List, Dict, Optional
 from datetime import datetime
 
-from .config import log_with_timestamp
-from .ai_model import (
+from config import log_with_timestamp
+from ai_model import (
     load_all_models, ml_search, hybrid_semantic_search,
     vec, X_corpus, m_click, m_order, fe, sbert_model, faiss_index,
     sbert_ids, reranker, sbert_embs, RERANKER_MODE,
     TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT
 )
-from .service import (
+from service import (
     load_data, db_search, advanced_db_search, get_categories,
     get_grouped_categories, get_popular_categories,
     get_fallback_autocomplete_suggestions, get_database
 )
-from .elastic_search import init_elasticsearch, get_autocomplete_suggestions, index_product_data
+from elastic_search import init_elasticsearch, get_autocomplete_suggestions, index_product_data
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)

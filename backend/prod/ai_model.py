@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 import faiss
 from rerankers import CrossEncoderReranker, ColBERTReranker
-from .config import ARTIF_DIR, MODEL_DIR, FE_PATH, RERANKER_MODE, TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT, log_with_timestamp
+from config import ARTIF_DIR, MODEL_DIR, FE_PATH, RERANKER_MODE, TOPK_RECALL_DEFAULT, TOPK_RETURN_DEFAULT, log_with_timestamp
 
 # ===== ML MODEL LOADING =====
 vec = None

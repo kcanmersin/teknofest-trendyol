@@ -2,7 +2,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from typing import List, Dict
 import polars as pl
-from .config import ELASTICSEARCH_URL, PRODUCTS_INDEX, log_with_timestamp
+from config import ELASTICSEARCH_URL, PRODUCTS_INDEX, log_with_timestamp
 
 # ===== ELASTICSEARCH CLIENT =====
 es_client = None
