@@ -11,6 +11,10 @@ ARTIF_DIR = os.path.expanduser("~/.cache/trendyol/artifacts_enes")
 MODEL_DIR = os.path.expanduser("~/models")
 FE_PATH = os.path.expanduser("~/trendyol-teknofest-hackathon/hackathon_2nd_phase_data/frontend_data.parquet")
 
+# Debug: Path'leri yazdır
+print(f"DEBUG: FE_PATH = {FE_PATH}")
+print(f"DEBUG: File exists = {os.path.exists(FE_PATH)}")
+
 # ===== HYBRID SEMANTIC SEARCH MODELS =====
 RERANKER_MODE = os.environ.get("RERANKER_MODE", "crossencoder").lower()
 TOPK_RECALL_DEFAULT = 400

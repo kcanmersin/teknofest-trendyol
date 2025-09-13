@@ -299,7 +299,7 @@ def build_doc_text(title: str, level2_category: str, leaf_category: str) -> str:
 def hybrid_semantic_search(query: str, recall_k: int = TOPK_RECALL_DEFAULT, return_k: int = TOPK_RETURN_DEFAULT):
     """Perform enhanced hybrid semantic search with SBERT + Advanced Reranker"""
     if (sbert_model is None or faiss_index is None or
-        sbert_ids is None or reranker is None or fe is None):
+        sbert_ids is None or fe is None):
         log_with_timestamp("Hybrid semantic search models not available", "WARN")
         return pl.DataFrame({
             "content_id_hashed": [], "content_title": [], "image_url": [],

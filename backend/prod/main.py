@@ -143,8 +143,9 @@ async def startup_event():
     ml_ready = (vec is not None and X_corpus is not None and
                 m_click is not None and m_order is not None and fe is not None)
     db_ready = get_database() is not None
+    # Reranker olmasa da çalışabilir, sadece SBERT kullanır
     hybrid_ready = (sbert_model is not None and faiss_index is not None and
-                   sbert_ids is not None and reranker is not None and fe is not None)
+                   sbert_ids is not None and fe is not None)
 
     log_with_timestamp("SYSTEM STATUS:")
     log_with_timestamp(f"   ML Engine: {'READY' if ml_ready else 'NOT READY'}")
@@ -214,7 +215,7 @@ async def search_products(request: SearchRequest):
             log_with_timestamp("USING SEMANTIC SEARCH ENGINE (SBERT + Reranker)")
             # Semantic ML search - prioritize hybrid semantic search
             if (sbert_model is not None and faiss_index is not None and
-                sbert_ids is not None and reranker is not None and fe is not None):
+                sbert_ids is not None and fe is not None):
                 log_with_timestamp("Running Semantic Search (SBERT + Advanced Reranker)...")
                 recall_k = max(request.limit*8, TOPK_RECALL_DEFAULT)
                 res_df = hybrid_semantic_search(request.query, recall_k=recall_k, return_k=request.limit)
@@ -242,7 +243,7 @@ async def search_products(request: SearchRequest):
             log_with_timestamp("USING ENHANCED SEMANTIC SEARCH ENGINE")
             # Enhanced semantic search with full context
             if (sbert_model is None or faiss_index is None or
-                sbert_ids is None or reranker is None or fe is None):
+                sbert_ids is None or fe is None):
                 log_with_timestamp("Enhanced semantic search models not available!", "ERROR")
                 raise HTTPException(status_code=500, detail="Enhanced semantic search models not loaded")
 
